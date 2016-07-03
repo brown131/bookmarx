@@ -66,7 +66,16 @@
               :pretty-print  true}}
 
 
-
+            :devcards
+            {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
+             :figwheel {:devcards true}
+             :compiler {:main "bookmarx.cards"
+                        :asset-path "js/devcards_out"
+                        :output-to "target/cljsbuild/public/js/app_devcards.js"
+                        :output-dir "target/cljsbuild/public/js/devcards_out"
+                        :source-map-timestamp true
+                        :optimizations :none
+                        :pretty-print true}}
             }
    }
 
@@ -80,6 +89,8 @@
    :css-dirs ["resources/public/css"]
    :ring-handler bookmarx.handler/app}
 
+  :less {:source-paths ["src/less"]
+         :target-path "resources/public/css"}
 
 
   :profiles {:dev {:repl-options {:init-ns bookmarx.repl}
@@ -90,12 +101,15 @@
                                   [figwheel-sidecar "0.5.4-4"]
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
+                                  [devcards "0.2.1-7"
+                                   :exclusions [org.clojure/tools.reader]]
                                   [pjstadig/humane-test-output "0.8.0"]
                                   ]
 
                    :source-paths ["env/dev/clj"]
                    :plugins [[lein-figwheel "0.5.4-4"]
-                             ]
+                             
+                             [lein-less "1.7.5"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]

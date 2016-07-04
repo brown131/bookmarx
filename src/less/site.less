@@ -1,34 +1,158 @@
+@import (reference) "bootstrap/bootstrap.less";
+
+.header-navbar {
+  .navbar-header;
+  font-size: 26pt;
+  color: red;
+  &:hover {
+    color: red;
+    text-decoration: none;
+  }
+}
+
+.header-pills {
+  .nav;
+  .nav-pills;
+  border: 1px solid dimgrey;
+  li {
+    a {
+      color: red;
+      &:hover {
+        color: red;
+        background-color: dimgrey;
+        text-decoration: none;
+      }
+    }
+  }
+}
+
+.header-button {
+  .btn;
+  .btn-default;
+  color: white;
+  background-color: black;
+  border-color: black;
+  &:hover {
+    color: white;
+    background-color: dimgrey;
+    border-color: dimgrey;
+    text-decoration: none;
+  }
+  @media (max-width: 320px) {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  @media (min-width: 321px) and (max-width: 767px) {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+.header-nav {
+  .nav;
+  .navbar-inverse;
+  .navbar-fixed-top;
+  background-color: black;
+}
+
+.header-star {
+  .glyphicon;
+  .glyphicon-star-empty;
+  font-size: 35pt;
+  margin-top: 2px;
+  padding-left: 10px;
+  padding-right: 20px;
+}
+
+.breadcrumbs {
+  .breadcrumb;
+  background-color: whitesmoke;
+  a {
+    color:red;
+    &:hover {
+      color: red;
+      text-decoration: none;
+    }
+  }
+}
+
+.bookmark {
+  overflow-y: hidden;
+}
+
+.bookmark_link {
+  color: black;
+  margin-right: 6px;
+  &:hover {
+    color: black;
+  }
+}
+
+.bookmark_link-icon {
+  .glyphicon;
+  .glyphicon-link;
+  width: 15px;
+}
+
+.bookmark_link-icon-rating {
+  .glyphicon;
+  .glyphicon-star;
+  width: 15px;
+}
+
+.bookmark_menu-icon-close {
+  .glyphicon;
+  .glyphicon-folder-close;
+  width: 19px;
+}
+
+.bookmark_menu-icon-open {
+  .glyphicon;
+  .glyphicon-folder-open;
+  width: 19px;
+}
+
+// Style for the children nodes container.
+.bookmark_children {
+  .bookmark;
+  margin-left: 16px;
+}
+
+.bookmark_children-collapsed {
+  height: 0;
+}
+
+.bookmark_arrow {
+  &:after {
+    content: '▾';
+  }
+  cursor: pointer;
+  margin-right: 6px;
+  display: inline-block;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+// Rotate the triangle to close it.
+.bookmark_arrow-collapsed {
+  .bookmark_arrow;
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+
+.bookmark.a {
+  color: black;
+}
+
 body {
-  font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
-  margin: 0 auto;
-  padding-top: 72px;
-  -webkit-font-smoothing: antialiased;
-  font-size: 1.125em;
-  color: #333;
-  line-height: 1.5em;
-}
-
-h1, h2, h3 {
-  color: #000;
-}
-h1 {
-  font-size: 2.5em
-}
-
-h2 {
-  font-size: 2em
-}
-
-h3 {
-  font-size: 1.5em
-}
-
-a {
-  text-decoration: none;
-  color: #09f;
-}
-
-a:hover {
-  text-decoration: underline;
+  @media (max-width: 767px) {
+    padding-top: 140px;
+  }
+  @media (min-width: 768px) {
+    padding-top: 70px;
+  }
 }

@@ -12,7 +12,7 @@
 (enable-console-print!)
 
 ;; -------------------------
-;; Views
+;; Components
 
 (defn header []
   [:span
@@ -47,35 +47,62 @@
            [:li [:a {:href "#"} "Bookmark Add"]]]]
          [:button {:class "dropdown-item" :type "button"} "Something else"]]]]]]])
 
-(defn bookmark [id]
-  (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent open?]}
-        (session/get id)]
-    ;(println "Bookmark" id)
+(defn -get-route
+  "Gets the route to a menu in a tree by id."
+  ([id] (-get-route id [id]))
+  ([id route]
+   (if-let [parent (:bookmark/parent (session/get id))]
+     (recur (:db/id parent) (cons (:db/id parent) route))
+     route)))
+
+(defn breadcrumb
+  "Renders a breadcrumb."
+  [id name active?]
+  (if active?
+    [:li {:class "active" :key (str id "-bc-key")} name]
+    [:li {:key (str id "-bc-key")}
+     [:a {:on-click #(session/put! :active id) :key (str id "-a-key")} name]]))
+
+(defn breadcrumbs
+  []
+  (let [route (-get-route (session/get :active))]
+    [:ol {:class "breadcrumbs"}
+     (doall (map #(let [{:keys [db/id bookmark/name]} (session/get %)]
+                   (breadcrumb id name (= % (last route)))) route))]))
+
+(defn bookmark [mark]
+  (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]} mark]
     (if url
-     ; [:div {:class "bookmark_children" :key (str id "-key")}
-       [:div {:class "bookmark_link-icon" :aria-hidden "true" :key (str id "-icon-key")}
-        [:a {:on-click #(gwin/open url) :class "bookmark_link" :key (str id "-link-key")} name]
-        (when rating
-          (take rating
-                (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
-                                :key (str id "-rating-key")}])))];]
       [:div {:class "bookmark_children" :key (str id "-key")}
-       [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
-               :key (str id "-arrow-key")
-               :on-click #(println "open?")}]
-       [:span {:class (str "bookmark_menu-icon-" (if open? "open" "close"))
-               :aria-hidden "true" :key (str id "-icon-key")
-               :on-click #(println "add")}]
-       [:span {:key (str id "-name-key") :on-click #(println "active")} name]
-       (when open? [:ul {:class "nav nav-pills nav-stacked":key (str id "-children-key")}
-                    (map #(bookmark %) _parent)])])))
+        [:div {:class "bookmark_link-icon" :aria-hidden "true" :key (str id "-icon-key")}]
+         [:a {:on-click #(gwin/open url) :class "bookmark_link" :key (str id "-link-key")} name]
+         (when rating
+           (take rating
+                 (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
+                                 :key (str id "-rating-key")}])))]
+      (let [{:keys [bookmark/_parent open?]} (session/get id)]
+        [:div {:class "bookmark_children" :key (str id "-key")}
+         [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
+                 :key (str id "-arrow-key")
+                 :on-click #(do (println id "open?" open?)
+                                (if open? (session/update-in! [id :open?] (fn [_] (not open?)))
+                                          (session/assoc-in! [id :open?] true)))}]
+         [:span {:class (str "bookmark_menu-icon-" (if open? "open" "close"))
+                 :aria-hidden "true" :key (str id "-icon-key")
+                 :on-click #(println "add")}]
+         [:span {:key (str id "-name-key") :on-click #(session/put! :active id)} name]
+         (when open? [:ul {:class "nav nav-pills nav-stacked":key (str id "-children-key")}
+                      (doall (map #(bookmark %) _parent))])]))))
+
+;; -------------------------
+;; Views
 
 (defn home-page []
   [:div {:class "col-sm-12"}
    (header)
-   [:h2 "Welcome to bookmarx"]
+   (breadcrumbs)
    ;(str (:bookmark/_parent (session/get (session/get :active))))
-   (doall (map #(bookmark (:db/id %)) (:bookmark/_parent (session/get (session/get :active)))))
+   (doall (map #(bookmark %) (session/get-in [(session/get :active) :bookmark/_parent])))
    [:div [:a {:href "/about"} "go to about page"]]])
 
 (defn about-page []
@@ -121,7 +148,6 @@
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
         (session/put! :active active)
         (doall (map #(session/put! (:db/id %) %) bookmarks))
-        (println "active" (session/get :active))
         (accountant/configure-navigation!
           {:nav-handler (fn [path] (secretary/dispatch! path))
            :path-exists? (fn [path] (secretary/locate-route path))})

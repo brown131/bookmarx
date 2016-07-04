@@ -58,8 +58,8 @@
 .header-star {
   .glyphicon;
   .glyphicon-star-empty;
-  font-size: 35pt;
-  margin-top: 2px;
+  font-size: 33pt;
+  margin-top: 3px;
   padding-left: 10px;
   padding-right: 20px;
 }
@@ -80,17 +80,22 @@
   overflow-y: hidden;
 }
 
-.bookmark_link {
+.bookmark-link {
   color: black;
-  margin-right: 6px;
   &:hover {
     color: black;
   }
 }
 
+.bookmark {
+  .bookmark-link;
+  margin-right: 6px;
+}
+
 .bookmark_link-icon {
   .glyphicon;
   .glyphicon-link;
+  .bookmark-link;
   width: 15px;
 }
 
@@ -100,15 +105,17 @@
   width: 15px;
 }
 
-.bookmark_menu-icon-close {
+.bookmark_folder-icon-close {
   .glyphicon;
   .glyphicon-folder-close;
+  .bookmark-link;
   width: 19px;
 }
 
-.bookmark_menu-icon-open {
+.bookmark_folder-icon-open {
   .glyphicon;
   .glyphicon-folder-open;
+  .bookmark-link;
   width: 19px;
 }
 

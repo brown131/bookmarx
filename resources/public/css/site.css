@@ -7120,8 +7120,8 @@ fieldset[disabled] .header-nav .btn-link:focus {
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 35pt;
-  margin-top: 2px;
+  font-size: 33pt;
+  margin-top: 3px;
   padding-left: 10px;
   padding-right: 20px;
 }
@@ -7157,11 +7157,17 @@ fieldset[disabled] .header-nav .btn-link:focus {
 .bookmark {
   overflow-y: hidden;
 }
-.bookmark_link {
+.bookmark-link {
+  color: black;
+}
+.bookmark-link:hover {
+  color: black;
+}
+.bookmark {
   color: black;
   margin-right: 6px;
 }
-.bookmark_link:hover {
+.bookmark:hover {
   color: black;
 }
 .bookmark_link-icon {
@@ -7174,10 +7180,14 @@ fieldset[disabled] .header-nav .btn-link:focus {
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: black;
   width: 15px;
 }
 .bookmark_link-icon:before {
   content: "\e144";
+}
+.bookmark_link-icon:hover {
+  color: black;
 }
 .bookmark_link-icon-rating {
   position: relative;
@@ -7194,7 +7204,7 @@ fieldset[disabled] .header-nav .btn-link:focus {
 .bookmark_link-icon-rating:before {
   content: "\e006";
 }
-.bookmark_menu-icon-close {
+.bookmark_folder-icon-close {
   position: relative;
   top: 1px;
   display: inline-block;
@@ -7204,12 +7214,16 @@ fieldset[disabled] .header-nav .btn-link:focus {
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: black;
   width: 19px;
 }
-.bookmark_menu-icon-close:before {
+.bookmark_folder-icon-close:before {
   content: "\e117";
 }
-.bookmark_menu-icon-open {
+.bookmark_folder-icon-close:hover {
+  color: black;
+}
+.bookmark_folder-icon-open {
   position: relative;
   top: 1px;
   display: inline-block;
@@ -7219,14 +7233,23 @@ fieldset[disabled] .header-nav .btn-link:focus {
   line-height: 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: black;
   width: 19px;
 }
-.bookmark_menu-icon-open:before {
+.bookmark_folder-icon-open:before {
   content: "\e118";
+}
+.bookmark_folder-icon-open:hover {
+  color: black;
 }
 .bookmark_children {
   overflow-y: hidden;
+  color: black;
+  margin-right: 6px;
   margin-left: 16px;
+}
+.bookmark_children:hover {
+  color: black;
 }
 .bookmark_children-collapsed {
   height: 0;

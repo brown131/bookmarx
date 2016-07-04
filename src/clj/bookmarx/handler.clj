@@ -67,12 +67,17 @@
      :body {:db/id id}}))
 
 (defroutes routes
+           ;; Views
            (GET "/" [] loading-page)
+           (GET "/add" [] loading-page)
            (GET "/about" [] loading-page)
            (GET "/cards" [] cards-page)
+
+           ;; API
            (GET "/api/bookmarks" [] (get-bookmarks ""))
            (GET "/api/bookmarks/:id" [id] (get-bookmark id))
            (POST "/api/bookmarks" {body :body} (post-bookmark (slurp body)))
+
            (resources "/")
            (not-found "Not Found"))
 

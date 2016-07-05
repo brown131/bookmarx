@@ -49,4 +49,5 @@
            [:div {:class "radio-inline"}
             [:label [:input {:type "radio" :name "rating-opts" :value rating5 :key "rating5-key"}]
              "5"]]]])
-     [:div [:button {:class "button" :type :button :on-click #(accountant/navigate! "/")} "Add"]]]))
+     [:div [:button {:class "button" :type :button
+                     :on-click #(accountant/navigate! "/")} "Add"]]]))

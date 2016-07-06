@@ -8,7 +8,8 @@
 
 (enable-console-print!)
 
-(defn header []
+(defn header "Render the header for the page."
+  []
   [:span
    [:nav {:class "header-nav"}
     [:div {:class "container-fluid"}
@@ -28,30 +29,29 @@
          [:li [:a {:href "#"} "Show"]]
          [:li [:a {:href "#"} "Sort"]]]]]]]]])
 
-(defn -get-route
-  "Gets the route to a menu in a tree by id."
+(defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
   ([id route]
    (if-let [parent (:bookmark/parent (session/get id))]
      (recur (:db/id parent) (cons (:db/id parent) route))
      route)))
 
-(defn breadcrumb
-  "Renders a breadcrumb."
+(defn breadcrumb "Renders a breadcrumb."
   [id name active?]
   (if active?
     [:li {:class "active" :key (str id "-bc-key")} name]
     [:li {:key (str id "-bc-key")}
      [:a {:on-click #(session/put! :active id) :key (str id "-a-key")} name]]))
 
-(defn breadcrumbs
+(defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
   (let [route (-get-route (session/get :active))]
     [:ol {:class "breadcrumbs"}
      (doall (map #(let [{:keys [db/id bookmark/name]} (session/get %)]
                    (breadcrumb id name (= % (last route)))) route))]))
 
-(defn bookmark [mark]
+(defn bookmark "Render the bookmarks in a tree."
+  [mark]
   (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]} mark]
     (if url
       [:div {:class "bookmark_children" :key (str id "-key")}

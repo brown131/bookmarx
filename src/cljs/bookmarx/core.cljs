@@ -18,18 +18,17 @@
 ;; Define the default API URL.
 (goog-define api-url "http://localhost:3000/api/")
 
-(defn sort-folder-children
-  "Sorts the children of a folder by a sort key."
+(defn sort-folder-children "Sort the children of a folder by a sort key."
   [folder sort-key]
   (let [[l f] (map vec ((juxt filter remove) #(:bookmark/url %) (:bookmark/_parent folder)))]
     (update-in folder [:bookmark/_parent]
                #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))
 
-(defn mount-root []
+(defn mount-root "Mount the root node of the DOM."
+  []
   (reagent/render [view/current-page] (.getElementById js/document "app")))
 
-(defn init!
-  "Load the bookmarks from the database and set the state for the application."
+(defn init! "Load the bookmarks from the database and set the state for the application."
   []
   (go (let [body (:body (<! (http/get (str api-url "bookmarks") {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)

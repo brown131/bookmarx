@@ -5,11 +5,8 @@
 
 (enable-console-print!)
 
-(secretary/defroute "/" []
-                    (session/put! :current-page #'view/home-page))
+(secretary/defroute "/" [] (session/put! :current-page #'view/home-page))
 
-(secretary/defroute "/about" []
-                    (session/put! :current-page #'view/about-page))
+(secretary/defroute "/about" [] (session/put! :current-page #'view/about-page))
 
-(secretary/defroute "/add" []
-                    (session/put! :current-page #'view/add-page))
+(secretary/defroute "/add" [] (session/put! :current-page #'view/add-page))

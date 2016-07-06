@@ -13,23 +13,27 @@
 
 (enable-console-print!)
 
-(defn home-page []
+(defn home-page "Render the Home page."
+  []
   [:div {:class "col-sm-12"}
    (home/header)
    (home/breadcrumbs)
    ;(str (:bookmark/_parent (session/get (session/get :active))))
    (doall (map #(home/bookmark %) (session/get-in [(session/get :active) :bookmark/_parent])))])
 
-(defn about-page []
+(defn about-page "Render the About page."
+  []
   [:div {:class "col-sm-12"}
    (home/header)
    [:h2 "About bookmarx"]
    [:div [:a {:href "/"} "go to the home page"]]])
 
-(defn add-page []
+(defn add-page "Render the Add/Edit page."
+  []
   [:div {:class "col-sm-12"}
    (add/header)
    (add/add)])
 
-(defn current-page []
+(defn current-page "Render the current page."
+  []
   [:div [(session/get :current-page)]])

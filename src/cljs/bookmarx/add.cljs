@@ -6,14 +6,16 @@
             [goog.window :as gwin]
             [cljs-http.client :as http]))
 
-(defn header []
+(defn header "Render the header for the page."
+  []
   [:span
    [:nav {:class "header-nav"}
     [:div {:class "container-fluid"}
      [:span {:class "header-navbar"} "Bookmarx"]
      [:span {:class "header-navbar header-star"}]]]])
 
-(defn add []
+(defn add "Add or edit a bookmark."
+  []
   (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]}
         (session/get :add)
         folder? false

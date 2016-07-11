@@ -1,6 +1,6 @@
 (ns bookmarx.cards
   (:require [reagent.core :as reagent :refer [atom]]
-            [bookmarx.view :as view])
+            [bookmarx.home :as home])
   (:require-macros
    [devcards.core :as dc :refer [defcard defcard-doc defcard-rg deftest]]))
 
@@ -8,7 +8,7 @@
   [:div>h1 "This is your first devcard!"])
 
 (defcard-rg home-page-card
-            [view/home-page])
+            [home/home-page])
 
 (reagent/render [:div] (.getElementById js/document "app"))
 

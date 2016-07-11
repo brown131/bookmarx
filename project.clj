@@ -101,8 +101,7 @@
                                   [figwheel-sidecar "0.5.4-4"]
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
-                                  [devcards "0.2.1-7"
-                                   :exclusions [org.clojure/tools.reader]]
+                                  [devcards "0.2.1-7" :exclusions [org.clojure/tools.reader]]
                                   [pjstadig/humane-test-output "0.8.0"]]
 
                    :source-paths ["env/dev/clj"]

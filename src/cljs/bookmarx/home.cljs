@@ -4,7 +4,8 @@
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
             [goog.window :as gwin]
-            [cljs-http.client :as http]))
+            [cljs-http.client :as http]
+            [bookmarx.add :as add]))
 
 (enable-console-print!)
 
@@ -50,7 +51,7 @@
      (doall (map #(let [{:keys [db/id bookmark/name]} (session/get %)]
                    (breadcrumb id name (= % (last route)))) route))]))
 
-(defn bookmark "Render the bookmarks in a tree."
+(defn bookmark-tree "Render a bookmark in a tree."
   [mark]
   (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]} mark]
     (if url
@@ -59,18 +60,24 @@
             :on-click #(session/update! :add (fn [_] mark)) :href "/add"}]
        [:a {:on-click #(gwin/open url) :class "bookmark" :key (str id "-link-key")} name]
        (when rating
-         (take rating
-               (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
-                               :key (str id "-rating-key")}])))]
+         (take rating (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
+                                      :key (str id "-rating-key")}])))]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div {:class "bookmark_children" :key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                  :key (str id "-arrow-key")
                  :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
          [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
-              :aria-hidden "true" :key (str id "-icon-key")
-              :on-click #(session/update! :add (fn [_] mark)) :href "/add"}]
+              :aria-hidden "true" :key (str id "-icon-key") :href "/add"
+              :on-click #(session/put! :add (assoc mark :folder? true))}]
          [:a {:class "bookmark" :key (str id "-name-key")
               :on-click #(session/put! :active id)} name]
          (when open? [:ul {:class "nav nav-pills nav-stacked":key (str id "-children-key")}
-                      (doall (map #(bookmark %) _parent))])]))))
+                      (doall (map #(bookmark-tree %) _parent))])]))))
+
+(defn home-page "Render the Home page."
+  []
+  [:div {:class "col-sm-12"}
+   [header]
+   [breadcrumbs]
+   (doall (map #(bookmark-tree %) (session/get-in [(session/get :active) :bookmark/_parent])))])

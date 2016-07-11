@@ -13,13 +13,8 @@
 
 (enable-console-print!)
 
-(defn home-page "Render the Home page."
-  []
-  [:div {:class "col-sm-12"}
-   (home/header)
-   (home/breadcrumbs)
-   ;(str (:bookmark/_parent (session/get (session/get :active))))
-   (doall (map #(home/bookmark %) (session/get-in [(session/get :active) :bookmark/_parent])))])
+;; Define the default API URL.
+(goog-define api-url "http://localhost:3000/api/")
 
 (defn about-page "Render the About page."
   []

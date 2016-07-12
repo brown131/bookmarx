@@ -15,7 +15,7 @@
                  [ring-server "0.4.0"]
                  [fogus/ring-edn "0.3.0"]
                  [mysql/mysql-connector-java "5.1.21"]
-                 [com.datomic/datomic-pro "0.9.5350" :exclusions [joda-time]]
+                 [com.datomic/datomic-pro "0.9.5350" :exclusions [joda-time com.google.guavaguava]]
                  [compojure "1.5.1"]
                  [hiccup "1.0.5"]
                  [yogthos/config "0.8"]

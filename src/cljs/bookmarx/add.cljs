@@ -34,8 +34,9 @@
     [:h3 "Document State"]
    @doc])
 
-(defn add "Add or edit a bookmark."
+(defn add-page "Render the Add/Edit page."
   []
-  (let [doc (if (session/get :add) (atom (session/get :add)) (atom {}))]
-    [header]
-    [editor doc [bind-fields form-template doc]]))
+  [:div {:class "col-sm-12"}
+   [header]
+   (let [doc (if (session/get :add) (atom (session/get :add)) (atom {}))]
+     [editor doc [bind-fields form-template doc]])])

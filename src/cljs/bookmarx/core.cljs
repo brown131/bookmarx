@@ -3,13 +3,9 @@
               [reagent.session :as session]
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]
-              [goog.window :as gwin]
               [cljs-http.client :as http]
               [cljs.core.async :refer [<!]]
-              [bookmarx.home :as home]
-              [bookmarx.add :as add]
-              [bookmarx.route :as route]
-              [bookmarx.view :as view])
+              [bookmarx.route :as route])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -26,7 +22,7 @@
 
 (defn mount-root "Mount the root node of the DOM."
   []
-  (reagent/render [view/current-page] (.getElementById js/document "app")))
+  (reagent/render [route/current-page] (.getElementById js/document "app")))
 
 (defn init! "Load the bookmarks from the database and set the state for the application."
   []

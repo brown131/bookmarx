@@ -4,23 +4,17 @@
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
             [goog.window :as gwin]
-            [cljs-http.client :as http]))
+            [cljs-http.client :as http]
+            [bookmarx.header :as header]))
 
 (defn -select-folder "Select a folder."
   [id]
   (session/put! :selected id)
   (accountant/navigate! "/add"))
 
-(defn header "Render the header for the page."
-  []
-  [:span
-   [:nav {:class "header-nav"}
-    [:div {:class "container-fluid"}
-     [:span {:class "header-navbar"} "Bookmarx"]
-     [:span {:class "header-navbar header-star"}]]]])
-
 (defn select "Select a parent folder for a bookmark."
   [mark]
+  [header/header]
   (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]} mark]
     (when-not url
       (let [{:keys [bookmark/_parent open?]} (session/get id)]

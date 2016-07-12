@@ -1,11 +1,7 @@
 (ns bookmarx.home
-  (:require [reagent.core :as reagent :refer [atom]]
-            [reagent.session :as session]
-            [secretary.core :as secretary :include-macros true]
-            [accountant.core :as accountant]
+  (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [cljs-http.client :as http]
-            [bookmarx.add :as add]))
+            [bookmarx.header :as header]))
 
 (enable-console-print!)
 
@@ -57,7 +53,7 @@
     (if url
       [:div {:class "bookmark_children" :key (str id "-key")}
        [:a {:class "bookmark_link-icon" :aria-hidden "true" :key (str id "-icon-key")
-            :on-click #(session/update! :add (fn [_] mark)) :href "/add"}]
+            :on-click #(session/put! :add mark) :href "/add"}]
        [:a {:on-click #(gwin/open url) :class "bookmark" :key (str id "-link-key")} name]
        (when rating
          (take rating (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
@@ -78,6 +74,6 @@
 (defn home-page "Render the Home page."
   []
   [:div {:class "col-sm-12"}
-   [header]
+   [header/header true]
    [breadcrumbs]
    (doall (map #(bookmark-tree %) (session/get-in [(session/get :active) :bookmark/_parent])))])

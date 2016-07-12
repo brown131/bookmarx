@@ -7,26 +7,22 @@
             [goog.string :as gstr]
             [goog.window :as gwin]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]))
+            [cljs.core.async :refer [<!]]
+            [bookmarx.header :as header]))
 
 (defn row [label input]
   [:div.row
-   [:div.col-md-2 [:label label]]
-   [:div.col-md-5 input]])
+   [:div.col-md-2 ^{:key label} [:label label]]
+   [:div.col-md-5 ^{:key input} input]])
 
 (def form-template
   [:div
-   [row "Folder?"  [:input.form-control {:field :checkbox :id :folder?}]]
-   [row "Name"  [:input.form-control {:field :text :id :bookmark/name}]]
-   ])
-
-(defn header "Render the header for the page."
-  []
-  [:span
-   [:nav {:class "header-nav"}
-    [:div {:class "container-fluid"}
-     [:span {:class "header-navbar"} "Bookmarx"]
-     [:span {:class "header-navbar header-star"}]]]])
+   [row "Folder?" [:input.form-control {:field :checkbox :id :folder?}]]
+   [row "Name" [:input.form-control {:field :text :id :bookmark/name}]]
+   [:div {:field :container :visible? #(:folder? %)}
+     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
+     [row "Rating" [:input.form-control {:field :text :id :bookmark/rating}]]
+   ]])
 
 (defn editor [doc & body]
   [:div body
@@ -37,6 +33,6 @@
 (defn add-page "Render the Add/Edit page."
   []
   [:div {:class "col-sm-12"}
-   [header]
+   [header/header]
    (let [doc (if (session/get :add) (atom (session/get :add)) (atom {}))]
      [editor doc [bind-fields form-template doc]])])

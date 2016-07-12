@@ -18,21 +18,26 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport"
            :content "width=device-width, initial-scale=1"}]
-   (include-css (if (env :dev) "/css/site.css" "/css/site.min.css"))])
+   (include-css (if (env :dev) "css/site.css" "css/site.min.css"))
+   (include-css "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css")])
 
 (def loading-page
   (html5
     (head)
     [:body {:class "body-container"}
      [:div#app]
-     (include-js "/js/app.js")]))
+     (include-js "js/app.js")
+     (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
+     (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (def cards-page
   (html5
     (head)
     [:body
      [:div#app]
-     (include-js "/js/app_devcards.js")]))
+     (include-js "js/app_devcards.js")
+     (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
+     (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (defn get-bookmarks
   "Gets all bookmark folders and their children and returns them in an HTTP response."

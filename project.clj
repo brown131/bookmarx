@@ -15,7 +15,7 @@
                  [ring-server "0.4.0"]
                  [fogus/ring-edn "0.3.0"]
                  [mysql/mysql-connector-java "5.1.21"]
-                 [com.datomic/datomic-pro "0.9.5350" :exclusions [joda-time com.google.guavaguava]]
+                 [com.datomic/datomic-pro "0.9.5350" :exclusions [joda-time com.google.guava/guava]]
                  [compojure "1.5.1"]
                  [hiccup "1.0.5"]
                  [yogthos/config "0.8"]
@@ -64,7 +64,7 @@
             {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
              :compiler
              {:main "bookmarx.dev"
-              :asset-path "/js/out"
+              :asset-path "js/out"
               :output-to "target/cljsbuild/public/js/app.js"
               :output-dir "target/cljsbuild/public/js/out"
               :source-map true

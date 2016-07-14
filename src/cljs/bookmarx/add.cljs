@@ -26,11 +26,37 @@
      [row "Rating" [:input.form-control {:field :text :id :bookmark/rating}]]
    ]])
 
+(defn upsert "Upsert a bookmark by updating the appropriate state."
+  [doc]
+
+  ; Update this page's state.
+  ;(session/update! :add @doc)
+
+  ; Replace the folder to the session.
+  (when (:folder? @doc) (session/put! (:db/id @doc) @doc))
+
+  (let [parent-id (get-in @doc [:bookmark/parent :db/id])
+        parent (session/get parent-id)
+        children (:bookmark/_parent parent)]
+    (if (:add? @doc)
+        ; Add the child to the parent's children.
+        (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))
+        ; Update the parent's children with the updated child.
+        (session/put! parent-id
+                     (update-in parent [:bookmark/_parent]
+                                #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
+                                      children)))))
+  (println @doc)
+
+  ; Update the state in the remote repository.
+  ; TODO
+
+  ; Return to the home page.
+  (accountant/navigate! "/"))
+
 (defn editor [doc & body]
   [:div body
-   [:button.btn.btn-default {:on-click #(session/update! :add @doc)} "Save"]
-    [:h3 "Document State"]
-   @doc])
+   [:button.btn.btn-default {:on-click #(upsert doc)} "Save"]])
 
 (defn add-page "Render the Add/Edit page."
   []

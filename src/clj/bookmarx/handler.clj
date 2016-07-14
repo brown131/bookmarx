@@ -65,6 +65,7 @@
 (defn post-bookmark
   "Posts a bookmark to the database for an HTTP request."
   [body & [status]]
+  ;; TODO: Add db/id and bookmark/id if missing.
   (let [conn (d/connect uri)
         id @(d/transact conn body)]
     {:status (or status 200)

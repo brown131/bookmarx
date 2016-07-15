@@ -1,14 +1,12 @@
 (ns bookmarx.add
-  (:require [reagent.core :as reagent :refer [atom dom-node]]
-            [reagent.session :as session]
+  (:require [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
-            [goog.dom :as dom]
-            [goog.string :as gstr]
-            [goog.window :as gwin]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
-            [bookmarx.header :as header]))
+            [cljs.core.async :refer [>!]]
+            [bookmarx.header :as header])
+  (:require-macros
+    [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn row
   [label input]
@@ -28,28 +26,29 @@
 
 (defn upsert "Upsert a bookmark by updating the appropriate state."
   [doc]
-
-  ; Update this page's state.
-  ;(session/update! :add @doc)
-
   ; Replace the folder to the session.
-  (when (:folder? @doc) (session/put! (:db/id @doc) @doc))
+  (when (:folder? @doc)
+    (session/put! (:db/id @doc)
+                  (assoc @doc :bookmark/_parent (:bookmark/_parent (session/get (:db/id @doc))))))
 
   (let [parent-id (get-in @doc [:bookmark/parent :db/id])
         parent (session/get parent-id)
         children (:bookmark/_parent parent)]
+    (println "children" children)
     (if (:add? @doc)
         ; Add the child to the parent's children.
         (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))
         ; Update the parent's children with the updated child.
         (session/put! parent-id
-                     (update-in parent [:bookmark/_parent]
-                                #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
-                                      children)))))
-  (println @doc)
+                      (update-in parent [:bookmark/_parent]
+                                 #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
+                                       children)))))
 
   ; Update the state in the remote repository.
-  ; TODO
+  (println "api-url" js/api-url)
+  (go (let [body (:body (<! (http/post (str "https://www.browncross.com" "/api/bookmarks")
+                                       {:edn-params @doc :with-credentials? false})))]
+        (println "body" body)))
 
   ; Return to the home page.
   (accountant/navigate! "/"))

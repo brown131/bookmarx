@@ -5,8 +5,6 @@
             [bookmarx.add :as add]
             [bookmarx.home :as home]))
 
-(enable-console-print!)
-
 (secretary/defroute "/" [] (session/put! :current-page #'home/home-page))
 
 (secretary/defroute "/about" [] (session/put! :current-page #'about/about-page))

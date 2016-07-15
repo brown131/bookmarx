@@ -11,9 +11,6 @@
 
 (enable-console-print!)
 
-;; Define the default API URL.
-(goog-define api-url "http://localhost:3000/api/")
-
 (defn sort-folder-children "Sort the children of a folder by a sort key."
   [folder sort-key]
   (let [[l f] (map vec ((juxt filter remove) #(:bookmark/url %) (:bookmark/_parent folder)))]
@@ -26,7 +23,8 @@
 
 (defn init! "Load the bookmarks from the database and set the state for the application."
   []
-  (go (let [body (:body (<! (http/get (str api-url "bookmarks") {:with-credentials? false})))
+  (go (let [body (:body (<! (http/get (str "https://www.browncross.com" "/api/bookmarks")
+                                      {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
         (session/put! :active active)

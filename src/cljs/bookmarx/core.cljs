@@ -23,7 +23,7 @@
 
 (defn init! "Load the bookmarks from the database and set the state for the application."
   []
-  (go (let [body (:body (<! (http/get (str "https://www.browncross.com" "/api/bookmarks")
+  (go (let [body (:body (<! (http/get (str "https://www.browncross.com/bookmarx" "/api/bookmarks")
                                       {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]

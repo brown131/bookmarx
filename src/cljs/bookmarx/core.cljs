@@ -1,11 +1,11 @@
 (ns bookmarx.core
-    (:require [reagent.core :as reagent :refer [atom]]
-              [reagent.session :as session]
-              [secretary.core :as secretary :include-macros true]
-              [accountant.core :as accountant]
-              [cljs-http.client :as http]
-              [cljs.core.async :refer [<!]]
-              [bookmarx.route :as route])
+  (:require [reagent.core :as reagent :refer [atom]]
+            [reagent.session :as session]
+            [secretary.core :as secretary :include-macros true]
+            [accountant.core :as accountant]
+            [cljs-http.client :as http]
+            [cljs.core.async :refer [<!]]
+            [bookmarx.route :as route])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -27,6 +27,7 @@
                                       {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
+        (println "bookmarks" bookmarks)
         (session/put! :active active)
         (doall (map #(session/put! (:db/id %) %) bookmarks))
         (accountant/configure-navigation!

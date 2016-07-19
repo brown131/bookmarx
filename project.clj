@@ -29,8 +29,7 @@
 
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.1"]
-            [lein-asset-minifier "0.2.7"
-             :exclusions [org.clojure/clojure]]]
+            [lein-asset-minifier "0.2.7" :exclusions [org.clojure/clojure]]]
 
   :ring {:handler bookmarx.handler/app
          :uberwar-name "bookmarx.war"}

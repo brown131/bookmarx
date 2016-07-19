@@ -45,7 +45,6 @@
                                        children)))))
 
   ; Update the state in the remote repository.
-  (println "api-url" js/api-url)
   (go (let [body (:body (<! (http/post (str "https://www.browncross.com/bookmarx" "/api/bookmarks")
                                        {:edn-params @doc :with-credentials? false})))]
         (println "body" body)))

@@ -23,19 +23,13 @@
    (include-css "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css")])
 
 (def loading-page
-  (let [conn (d/connect uri)
-        bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
-                                         :bookmark/parent {:bookmark/_parent 1}])
-                         :where [?e :bookmark/id]
-                         [(missing? $ ?e :bookmark/url)]] (d/db conn))]
-    (html5
-      (head)
-      [:body {:class "body-container"}
-       [:div#app]
-       [:script (str "var bookmarks=\"" (pr-str bookmarks) "\";")]
-       (include-js "js/app.js")
-       (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
-       (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")])))
+  (html5
+    (head)
+    [:body {:class "body-container"}
+     [:div#app]
+     (include-js "js/app.js")
+     (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
+     (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (def cards-page
   (html5

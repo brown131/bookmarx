@@ -27,7 +27,6 @@
                                       {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
-        (println "bookmarks" bookmarks)
         (session/put! :active active)
         (doall (map #(session/put! (:db/id %) %) bookmarks))
         (accountant/configure-navigation!

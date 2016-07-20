@@ -3,7 +3,7 @@
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [>!]]
+            [cljs.core.async :refer [<!]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))

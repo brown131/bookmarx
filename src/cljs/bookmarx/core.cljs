@@ -5,7 +5,9 @@
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.route :as route])
+            [bookmarx.about :as about]
+            [bookmarx.add :as add]
+            [bookmarx.home :as home])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -17,20 +19,33 @@
     (update-in folder [:bookmark/_parent]
                #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))
 
-(defn mount-root "Mount the root node of the DOM."
-  []
-  (reagent/render [route/current-page] (.getElementById js/document "app")))
+(secretary/defroute "/bookmarx/" [] (session/put! :current-page #'home/home-page))
 
-(defn init! "Load the bookmarks from the database and set the state for the application."
+(secretary/defroute "/bookmarx/about" [] (session/put! :current-page #'about/about-page))
+
+(secretary/defroute "/bookmarx/add" [] (session/put! :current-page #'add/add-page))
+
+(defn current-page "Render the current page."
+  []
+  [:div [(session/get :current-page)]])
+
+(defn mount-root "Mount the root node of the DOM with the current page."
+  []
+  (reagent/render [:div [current-page]
+  (str  (-> js/window .-location))
+] (.getElementById js/document "app")))
+
+(defn init! "Load the bookmarks from the server and set the state for the application."
   []
   (go (let [body (:body (<! (http/get (str "https://www.browncross.com/bookmarx" "/api/bookmarks")
                                       {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
         (session/put! :active active)
-        (doall (map #(session/put! (:db/id %) %) bookmarks))
-        (accountant/configure-navigation!
-          {:nav-handler (fn [path] (secretary/dispatch! path))
-           :path-exists? (fn [path] (secretary/locate-route path))})
-        (accountant/dispatch-current!)
-        (mount-root))))
+        (doall (map #(session/put! (:db/id %) %) bookmarks))))
+  (secretary/set-route-prefix! "/bookmark/")
+  (accountant/configure-navigation!
+   {:nav-handler (fn [path] (secretary/dispatch! path))
+    :path-exists? (fn [path] (secretary/locate-route path))})
+  (accountant/dispatch-current!)
+  (mount-root))

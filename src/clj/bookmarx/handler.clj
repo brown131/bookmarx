@@ -7,7 +7,8 @@
             [config.core :refer [env]]
             [datomic.api :as d]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.edn :refer :all]))
+            [ring.middleware.edn :refer :all])
+  (:gen-class))
 
 (def uri "datomic:sql://bookmarx?jdbc:mysql://localhost:3306/datomic?user=datomic&password=datomic")
 
@@ -16,9 +17,10 @@
 
 (defn head []
   [:head
+   [:title "Bookmarx"]
    [:meta {:charset "utf-8"}]
-   [:meta {:name "viewport"
-           :content "width=device-width, initial-scale=1"}]
+   [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+   [:link {:rel "icon" :type "image/png" :href "favicon.ico"}]
    (include-css (if (env :dev) "css/site.css" "css/site.min.css"))
    (include-css "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css")])
 
@@ -27,6 +29,8 @@
     (head)
     [:body {:class "body-container"}
      [:div#app]
+     [:script {:language "javascript" :type "text/javascript"} 
+      (str "var config='" (env :client) "';")]
      (include-js "js/app.js")
      (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
      (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))

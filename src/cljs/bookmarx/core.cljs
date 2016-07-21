@@ -31,9 +31,7 @@
 
 (defn mount-root "Mount the root node of the DOM with the current page."
   []
-  (reagent/render [:div [current-page]
-  (str  (-> js/window .-location))
-] (.getElementById js/document "app")))
+  (reagent/render [:div [current-page]] (.getElementById js/document "app")))
 
 (defn init! "Load the bookmarks from the server and set the state for the application."
   []
@@ -43,7 +41,7 @@
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
         (session/put! :active active)
         (doall (map #(session/put! (:db/id %) %) bookmarks))))
-  (secretary/set-route-prefix! "/bookmark/")
+  (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!
    {:nav-handler (fn [path] (secretary/dispatch! path))
     :path-exists? (fn [path] (secretary/locate-route path))})

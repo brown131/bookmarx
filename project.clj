@@ -100,6 +100,7 @@
                                   [pjstadig/humane-test-output "0.8.0"]]
 
                    :source-paths ["env/dev/clj"]
+                   :resource-paths ["env/dev/resources"]
                    :plugins [[lein-figwheel "0.5.4-4"]
                              [lein-less "1.7.5"]]
 
@@ -110,6 +111,7 @@
 
              :uberjar {:hooks [minify-assets.plugin/hooks]
                        :source-paths ["env/prod/clj"]
+                       :resource-paths ["env/prod/resources"]
                        :prep-tasks ["compile" ["cljsbuild" "once" "min"]]
                        :env {:production true}
                        :aot :all

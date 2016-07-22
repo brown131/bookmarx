@@ -1,6 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
+            [bookmarx.env :refer [env]]
             [bookmarx.header :as header]))
 
 (enable-console-print!)
@@ -21,8 +22,9 @@
         [:button {:class "header-button dropdown-toggle" :data-toggle "dropdown"}
          [:span {:class "glyphicon glyphicon-menu-hamburger" :color "white"}]]
         [:ul {:class "dropdown-menu"}
-         [:li [:a {:href "/about"} "About..."]]
-         [:li [:a {:href "/add" :on-click #(session/remove! :add)} "Add Bookmark..."]]
+         [:li [:a {:href (str (:prefix env) "/about")} "About..."]]
+         [:li [:a {:href (str (:prefix env) "/add") :on-click #(session/remove! :add)} 
+                  "Add Bookmark..."]]
          [:li [:a {:href "#"} "Show"]]
          [:li [:a {:href "#"} "Sort"]]]]]]]]])
 
@@ -53,7 +55,7 @@
     (if url
       [:div {:class "bookmark_children" :key (str id "-key")}
        [:a {:class "bookmark_link-icon" :aria-hidden "true" :key (str id "-icon-key")
-            :on-click #(session/put! :add mark) :href "/add"}]
+            :on-click #(session/put! :add mark) :href (str (:prefix env) "/add")}]
        [:a {:on-click #(gwin/open url) :class "bookmark" :key (str id "-link-key")} name]
        (when rating
          (take rating (repeat [:span {:class "bookmark_link-icon-rating" :aria-hidden "true"
@@ -64,7 +66,7 @@
                  :key (str id "-arrow-key")
                  :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
          [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
-              :aria-hidden "true" :key (str id "-icon-key") :href "/add"
+              :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
               :on-click #(session/put! :add (assoc mark :folder? true))}]
          [:a {:class "bookmark" :key (str id "-name-key")
               :on-click #(session/put! :active id)} name]

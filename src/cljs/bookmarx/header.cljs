@@ -1,5 +1,6 @@
 (ns bookmarx.header
-  (:require [reagent.session :as session]))
+  (:require [reagent.session :as session]
+            [bookmarx.env :refer [env]]))
 
 (enable-console-print!)
 
@@ -16,12 +17,12 @@
         [:span {:class "navbar-right"}
          [:input {:type "text" :placeholder "Search"}]
          [:button {:class "header-button"}
-          [:span {:class "glyphicon glyphicon-search" :color "white"}]]
+         [:span {:class "glyphicon glyphicon-search" :color "white"}]]
          [:span {:class "dropdown"}
           [:button {:class "header-button dropdown-toggle" :data-toggle "dropdown"}
            [:span {:class "glyphicon glyphicon-menu-hamburger" :color "white"}]]
           [:ul {:class "dropdown-menu"}
-           [:li [:a {:href "/about"} "About..."]]
-           [:li [:a {:href "/add" :on-click #(session/remove! :add)} "Add Bookmark..."]]
+           [:li [:a {:href (str (:prefix env) "/about")} "About..."]]
+           [:li [:a {:href (str (:prefix env) "/add") :on-click #(session/remove! :add)} "Add Bookmark..."]]
            [:li [:a {:href "#"} "Show"]]
            [:li [:a {:href "#"} "Sort"]]]]]])]]]))

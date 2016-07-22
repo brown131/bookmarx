@@ -11,4 +11,5 @@
 .#*
 nohup.out
 profiles.clj
+config.edn
 .nrepl-port

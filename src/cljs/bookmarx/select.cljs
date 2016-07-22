@@ -5,12 +5,13 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [cljs-http.client :as http]
+            [bookmarx.env :refer [env]]
             [bookmarx.header :as header]))
 
 (defn -select-folder "Select a folder."
   [id]
   (session/put! :selected id)
-  (accountant/navigate! "/add"))
+  (accountant/navigate! (str (:prefix env) "/add")))
 
 (defn select "Select a parent folder for a bookmark."
   [mark]

@@ -5,6 +5,7 @@
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
+            [bookmarx.env :refer [env]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
             [bookmarx.home :as home])
@@ -19,11 +20,11 @@
     (update-in folder [:bookmark/_parent]
                #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))
 
-(secretary/defroute "/bookmarx/" [] (session/put! :current-page #'home/home-page))
+(secretary/defroute (str (:prefix env) "/") [] (session/put! :current-page #'home/home-page))
 
-(secretary/defroute "/bookmarx/about" [] (session/put! :current-page #'about/about-page))
+(secretary/defroute (str (:prefix env) "/about") [] (session/put! :current-page #'about/about-page))
 
-(secretary/defroute "/bookmarx/add" [] (session/put! :current-page #'add/add-page))
+(secretary/defroute (str (:prefix env) "/add") [] (session/put! :current-page #'add/add-page))
 
 (defn current-page "Render the current page."
   []
@@ -35,7 +36,7 @@
 
 (defn init! "Load the bookmarks from the server and set the state for the application."
   []
-  (go (let [body (:body (<! (http/get (str "https://www.browncross.com/bookmarx" "/api/bookmarks")
+  (go (let [body (:body (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                       {:with-credentials? false})))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]

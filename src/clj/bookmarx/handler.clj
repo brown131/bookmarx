@@ -10,8 +10,6 @@
             [ring.middleware.edn :refer :all])
   (:gen-class))
 
-(def uri "datomic:sql://bookmarx?jdbc:mysql://localhost:3306/datomic?user=datomic&password=datomic")
-
 (def mount-target
   [:div#app])
 
@@ -29,8 +27,7 @@
     (head)
     [:body {:class "body-container"}
      [:div#app]
-     [:script {:language "javascript" :type "text/javascript"} 
-      (str "var config='" (env :client) "';")]
+     [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
      (include-js "js/app.js")
      (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
      (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
@@ -40,6 +37,7 @@
     (head)
     [:body
      [:div#app]
+     [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
      (include-js "js/app_devcards.js")
      (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
      (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
@@ -47,7 +45,7 @@
 (defn get-bookmarks
   "Gets all bookmark folders and their children and returns them in an HTTP response."
   [_ & [status]]
-  (let [conn (d/connect uri)
+  (let [conn (d/connect (env :database-uri))
         bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
                                          :bookmark/parent {:bookmark/_parent 1}])
                          :where [?e :bookmark/id]
@@ -59,7 +57,7 @@
 (defn get-bookmark
   "Gets a bookmark and returns it in an HTTP response."
   [id & [status]]
-  (let [conn (d/connect uri)
+  (let [conn (d/connect (env :database-uri))
         bookmark (d/q `[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
                                         :bookmark/parent {:bookmark/_parent 1}])
                         :where [?e :bookmark/id ~id]] (d/db conn))]
@@ -71,7 +69,7 @@
   "Posts a bookmark to the database for an HTTP request."
   [body & [status]]
   ;; TODO: Add db/id and bookmark/id if missing.
-  (let [conn (d/connect uri)
+  (let [conn (d/connect (env :database-uri))
         id @(d/transact conn body)]
     {:status (or status 200)
      :headers {"Content-Type" "application/edn"}

@@ -4,6 +4,7 @@
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
+            [bookmarx.env :refer [env]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -50,7 +51,7 @@
         (println "body" body)))
 
   ; Return to the home page.
-  (accountant/navigate! "/"))
+  (accountant/navigate! (str (:prefix env) "/")))
 
 (defn editor [doc & body]
   [:div body

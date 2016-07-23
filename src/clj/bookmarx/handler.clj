@@ -6,6 +6,7 @@
             [bookmarx.middleware :refer [wrap-middleware]]
             [config.core :refer [env]]
             [datomic.api :as d]
+            [ring.middleware.anti-forgery :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.edn :refer :all])
   (:gen-class))
@@ -51,7 +52,7 @@
                          :where [?e :bookmark/id]
                          [(missing? $ ?e :bookmark/url)]] (d/db conn))]
     {:status (or status 200)
-     :headers {"Content-Type" "application/edn"}
+     :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
      :body (str bookmarks)}))
 
 (defn get-bookmark
@@ -62,7 +63,7 @@
                                         :bookmark/parent {:bookmark/_parent 1}])
                         :where [?e :bookmark/id ~id]] (d/db conn))]
     {:status (or status 200)
-     :headers {"Content-Type" "application/edn"}
+     :headers {"content-type" "application/edn"}
      :body (str bookmark)}))
 
 (defn post-bookmark
@@ -72,7 +73,7 @@
   (let [conn (d/connect (env :database-uri))
         id @(d/transact conn body)]
     {:status (or status 200)
-     :headers {"Content-Type" "application/edn"}
+     :headers {"content-type" "application/edn"}
      :body {:db/id id}}))
 
 (defroutes routes

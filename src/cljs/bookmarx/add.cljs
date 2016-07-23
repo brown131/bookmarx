@@ -47,7 +47,8 @@
 
   ; Update the state in the remote repository.
   (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                       {:edn-params @doc :with-credentials? false})))]
+                                       {:edn-params @doc :with-credentials? false
+                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
         (println "body" body)))
 
   ; Return to the home page.

@@ -28,7 +28,7 @@
 
 (defn current-page "Render the current page."
   []
-  [:div [(session/get :current-page)]])
+  [:div [(session/get :current-page)] "token " (str (session/get :csrf-token))])
 
 (defn mount-root "Mount the root node of the DOM with the current page."
   []
@@ -36,11 +36,12 @@
 
 (defn init! "Load the bookmarks from the server and set the state for the application."
   []
-  (go (let [body (:body (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                      {:with-credentials? false})))
-            bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) body)
+  (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
+                                  {:with-credentials? false}))
+            bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) (:body response))
             active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
         (session/put! :active active)
+        (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
         (doall (map #(session/put! (:db/id %) %) bookmarks))))
   (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!

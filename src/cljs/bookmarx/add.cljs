@@ -1,5 +1,6 @@
 (ns bookmarx.add
-  (:require [reagent.session :as session]
+  (:require [reagent.core :refer [atom]]
+            [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
             [cljs-http.client :as http]

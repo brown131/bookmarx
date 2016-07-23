@@ -36,7 +36,6 @@
   (let [parent-id (get-in @doc [:bookmark/parent :db/id])
         parent (session/get parent-id)
         children (:bookmark/_parent parent)]
-    (println "children" children)
     (if (:add? @doc)
         ; Add the child to the parent's children.
         (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))

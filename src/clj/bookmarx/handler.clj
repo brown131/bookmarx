@@ -1,18 +1,17 @@
 (ns bookmarx.handler
-  (:require [clojure.string :as str]
-            [compojure.core :refer [GET POST defroutes]]
+  (:require [compojure.core :refer [GET POST defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [bookmarx.middleware :refer [wrap-middleware]]
             [config.core :refer [env]]
+            [taoensso.timbre :as timbre]
             [datomic.api :as d]
             [ring.middleware.anti-forgery :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.edn :refer :all])
   (:gen-class))
 
-(def mount-target
-  [:div#app])
+(timbre/refer-timbre)
 
 (defn head []
   [:head
@@ -45,19 +44,24 @@
 
 (defn get-bookmarks
   "Gets all bookmark folders and their children and returns them in an HTTP response."
-  [_ & [status]]
+  [params & [status]]
+  (info "get-bookmarks")
   (let [conn (d/connect (env :database-uri))
         bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
                                          :bookmark/parent {:bookmark/_parent 1}])
                          :where [?e :bookmark/id]
-                         [(missing? $ ?e :bookmark/url)]] (d/db conn))]
+                         [(missing? $ ?e :bookmark/url)]] (d/db conn))
+        headers {"content-type" "application/edn"}]
     {:status (or status 200)
-     :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
+     :headers (if (= (:csrf-token params) "true")
+                (assoc headers "csrf-token" *anti-forgery-token*)
+                headers)
      :body (str bookmarks)}))
 
 (defn get-bookmark
   "Gets a bookmark and returns it in an HTTP response."
   [id & [status]]
+  (infof "get-bookmark %s" id)
   (let [conn (d/connect (env :database-uri))
         bookmark (d/q `[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
                                         :bookmark/parent {:bookmark/_parent 1}])
@@ -69,6 +73,7 @@
 (defn post-bookmark
   "Posts a bookmark to the database for an HTTP request."
   [body & [status]]
+  (infof "post-bookmark %s" body)
   ;; TODO: Add db/id and bookmark/id if missing.
   (let [conn (d/connect (env :database-uri))
         id @(d/transact conn body)]
@@ -84,7 +89,7 @@
            (GET "/cards" [] cards-page)
 
            ;; API
-           (GET "/api/bookmarks" [] (get-bookmarks ""))
+           (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
            (GET "/api/bookmarks/:id" [id] (get-bookmark id))
            (POST "/api/bookmarks" {body :body} (post-bookmark (slurp body)))
 
@@ -97,7 +102,7 @@
   (-> #'routes
       wrap-middleware
       wrap-edn-params
-      (wrap-cors :access-control-allow-origin [#"http://localhost"
+      (wrap-cors :access-control-allow-origin [#"http://localhost:3000"
                                                #"http://localhost:3449"
-                                               #"http://localhost:3000"]
+                                               #"http://localhost"]
                  :access-control-allow-methods [:get :post])))

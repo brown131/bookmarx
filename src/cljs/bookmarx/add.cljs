@@ -3,6 +3,7 @@
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
+            [taoensso.timbre :as log]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [bookmarx.env :refer [env]]
@@ -30,12 +31,12 @@
 
 (defn upsert "Upsert a bookmark by updating the appropriate state."
   [doc]
-  (println "upsert")
+  (log/debug "upsertg")
   (if (:add? @doc)
     (let [parent-id (session/get :active)
           parent (session/get parent-id)]
       ; Add the parent.
-      (swap! doc (assoc @doc :bookmark/parent {:db/id parent-id}))
+      (swap! doc #(assoc @doc :bookmark/parent {:db/id parent-id}))
       ; Add the bookmark to the parent's children.
       (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))
       (session/put! (:db/id @doc) @doc))
@@ -54,13 +55,13 @@
                                      children)))))
 
   ; Update the state in the remote repository.
-  (println "bookmark" (dissoc @doc :bookmark/_parent :folder? :add?))
+  (log/debugf "bookmark: %s" (str @doc))
   (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add?)
-            body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
+           response (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmark")
                                 {:edn-params bookmark
                                  :with-credentials? false
                                  :headers {"x-csrf-token" (session/get :csrf-token)}}))]
-        (println "body----" )))
+        (log/debugf "response %s" response)))
 
   ; Return to the home page.
   (accountant/navigate! (str (:prefix env) "/")))

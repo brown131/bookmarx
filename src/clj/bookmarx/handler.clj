@@ -87,8 +87,7 @@
           response @(d/transact conn [bookmark])]
       (infof "response %s" (str response))
       {:status (or status 200)
-       :headers {"content-type" "application/edn"}
-       :body (pr-str {:db/id response})})
+       :headers {"content-type" "application/edn"}})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
@@ -100,8 +99,8 @@
 
            ;; API
            (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
-           (GET "/api/bookmarks/:id" [id] (get-bookmark id))
-           (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
+           (GET "/api/bookmark/:id" [id] (get-bookmark id))
+           (POST "/api/bookmark" {params :edn-params} (post-bookmark params))
 
            (resources "/")
            (not-found "Not Found"))
@@ -112,7 +111,8 @@
   (-> #'routes
       wrap-middleware
       wrap-edn-params
-      (wrap-cors :access-control-allow-origin [#"http://localhost:3000"
-                                               #"http://localhost:3449"
-                                               #"http://localhost"]
+      (wrap-cors :access-control-allow-origin [#"https://www.browncross.com"
+                                               #"http://localhost:3000"
+                                               #"http://localhost:3449"]
+                                               
                  :access-control-allow-methods [:get :post])))

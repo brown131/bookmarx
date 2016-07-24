@@ -10,6 +10,8 @@
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
+(enable-console-print!)
+
 (defn row
   [label input]
   [:div.row
@@ -28,28 +30,37 @@
 
 (defn upsert "Upsert a bookmark by updating the appropriate state."
   [doc]
-  ; Replace the folder to the session.
-  (when (:folder? @doc)
-    (session/put! (:db/id @doc)
-                  (assoc @doc :bookmark/_parent (:bookmark/_parent (session/get (:db/id @doc))))))
-
-  (let [parent-id (get-in @doc [:bookmark/parent :db/id])
-        parent (session/get parent-id)
-        children (:bookmark/_parent parent)]
-    (if (:add? @doc)
-        ; Add the child to the parent's children.
-        (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))
-        ; Update the parent's children with the updated child.
-        (session/put! parent-id
-                      (update-in parent [:bookmark/_parent]
-                                 #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
-                                       children)))))
+  (println "upsert")
+  (if (:add? @doc)
+    (let [parent-id (session/get :active)
+          parent (session/get parent-id)]
+      ; Add the parent.
+      (swap! doc (assoc @doc :bookmark/parent {:db/id parent-id}))
+      ; Add the bookmark to the parent's children.
+      (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc)))
+      (session/put! (:db/id @doc) @doc))
+    (let [parent-id (get-in @doc [:bookmark/parent :db/id])
+          parent (session/get parent-id)
+          children (:bookmark/_parent parent)]
+      ; Replace the children of the folder with the children from folder in the session.
+      (when (:folder? @doc)
+        (session/put! (:db/id @doc)
+                      (assoc @doc :bookmark/_parent
+                                  (:bookmark/_parent (session/get (:db/id @doc))))))
+      ; Update the parent's children with the updated child.
+      (session/put! parent-id
+                    (update-in parent [:bookmark/_parent]
+                               #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
+                                     children)))))
 
   ; Update the state in the remote repository.
-  (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                       {:edn-params (pr-str @doc) :with-credentials? false
-                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        (println "body" (str body))))
+  (println "bookmark" (dissoc @doc :bookmark/_parent :folder? :add?))
+  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add?)
+            body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
+                                {:edn-params bookmark
+                                 :with-credentials? false
+                                 :headers {"x-csrf-token" (session/get :csrf-token)}}))]
+        (println "body----" )))
 
   ; Return to the home page.
   (accountant/navigate! (str (:prefix env) "/")))

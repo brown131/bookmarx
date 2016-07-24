@@ -45,41 +45,51 @@
 (defn get-bookmarks
   "Gets all bookmark folders and their children and returns them in an HTTP response."
   [params & [status]]
-  (info "get-bookmarks")
-  (let [conn (d/connect (env :database-uri))
-        bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
-                                         :bookmark/parent {:bookmark/_parent 1}])
-                         :where [?e :bookmark/id]
-                         [(missing? $ ?e :bookmark/url)]] (d/db conn))
-        headers {"content-type" "application/edn"}]
-    {:status (or status 200)
-     :headers (if (= (:csrf-token params) "true")
-                (assoc headers "csrf-token" *anti-forgery-token*)
-                headers)
-     :body (str bookmarks)}))
+  (try
+    (info "get-bookmarks")
+    (let [conn (d/connect (env :database-uri))
+          bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
+                                           :bookmark/parent {:bookmark/_parent 1}])
+                           :where [?e :bookmark/id]
+                           [(missing? $ ?e :bookmark/url)]] (d/db conn))
+          headers {"content-type" "application/edn"}]
+      {:status (or status 200)
+       :headers (if (= (:csrf-token params) "true")
+                  (assoc headers "csrf-token" *anti-forgery-token*)
+                  headers)
+       :body (str bookmarks)})
+  (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-bookmark
   "Gets a bookmark and returns it in an HTTP response."
   [id & [status]]
-  (infof "get-bookmark %s" id)
-  (let [conn (d/connect (env :database-uri))
-        bookmark (d/q `[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
-                                        :bookmark/parent {:bookmark/_parent 1}])
-                        :where [?e :bookmark/id ~id]] (d/db conn))]
-    {:status (or status 200)
-     :headers {"content-type" "application/edn"}
-     :body (str bookmark)}))
+  (try
+    (infof "get-bookmark %s" id)
+    (let [conn (d/connect (env :database-uri))
+          bookmark (d/q `[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
+                                          :bookmark/parent {:bookmark/_parent 1}])
+                          :where [?e :bookmark/id ~id]] (d/db conn))]
+      {:status (or status 200)
+       :headers {"content-type" "application/edn"}
+       :body (str bookmark)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn post-bookmark
   "Posts a bookmark to the database for an HTTP request."
-  [body & [status]]
-  (infof "post-bookmark %s" body)
-  ;; TODO: Add db/id and bookmark/id if missing.
-  (let [conn (d/connect (env :database-uri))
-        id @(d/transact conn body)]
-    {:status (or status 200)
-     :headers {"content-type" "application/edn"}
-     :body {:db/id id}}))
+  [params & [status]]
+  (try
+    (infof "post-bookmark %s" params)
+    ; Add db/id and bookmark/id if missing.
+    (let [conn (d/connect (env :database-uri))
+          bookmark (if (:db/id params)
+                     params
+                     (assoc params :db/id #db/id[:db.part/user] :bookmark/id (d/squuid)))
+          response @(d/transact conn [bookmark])]
+      (infof "response %s" (str response))
+      {:status (or status 200)
+       :headers {"content-type" "application/edn"}
+       :body (pr-str {:db/id response})})
+  (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
            ;; Views
@@ -91,7 +101,7 @@
            ;; API
            (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
            (GET "/api/bookmarks/:id" [id] (get-bookmark id))
-           (POST "/api/bookmarks" {body :body} (post-bookmark (slurp body)))
+           (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
 
            (resources "/")
            (not-found "Not Found"))

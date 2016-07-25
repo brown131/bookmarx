@@ -1,5 +1,5 @@
 (ns bookmarx.handler
-  (:require [compojure.core :refer [GET POST defroutes]]
+  (:require [compojure.core :refer [GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [bookmarx.middleware :refer [wrap-middleware]]
@@ -43,7 +43,7 @@
      (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (defn get-bookmarks
-  "Gets all bookmark folders and their children and returns them in an HTTP response."
+  "Get all bookmark folders and their children and returns them in an HTTP response."
   [params & [status]]
   (try
     (info "get-bookmarks")
@@ -60,35 +60,44 @@
        :body (str bookmarks)})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn get-bookmark
-  "Gets a bookmark and returns it in an HTTP response."
-  [id & [status]]
-  (try
-    (infof "get-bookmark %s" id)
-    (let [conn (d/connect (env :database-uri))
-          bookmark (d/q `[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
-                                          :bookmark/parent {:bookmark/_parent 1}])
-                          :where [?e :bookmark/id ~id]] (d/db conn))]
-      {:status (or status 200)
-       :headers {"content-type" "application/edn"}
-       :body (str bookmark)})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
-
 (defn post-bookmark
-  "Posts a bookmark to the database for an HTTP request."
+  "Add a bookmark into the database for an HTTP request."
   [params & [status]]
   (try
     (infof "post-bookmark %s" params)
     ; Add db/id and bookmark/id if missing.
     (let [conn (d/connect (env :database-uri))
-          bookmark (if (:db/id params)
-                     params
-                     (assoc params :db/id #db/id[:db.part/user] :bookmark/id (d/squuid)))
+          id (d/squuid)
+          bookmark (assoc params :db/id #db/id[:db.part/user] :bookmark/id id)
           response @(d/transact conn [bookmark])]
       (infof "response %s" (str response))
       {:status (or status 200)
-       :headers {"content-type" "application/edn"}})
+       :headers {"content-type" "application/edn"}
+       :body {:db/id (second (first (vec (:tempids response))))
+              :bookmark/id id}})
   (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn put-bookmark
+  "Upsert a bookmark in the database for an HTTP request."
+  [id params & [status]]
+  (try
+    (infof "put-bookmark %s %s" id params)
+    (let [conn (d/connect (env :database-uri))
+          response @(d/transact conn [params])]
+      {:status (or status 200)})
+  (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn delete-bookmark
+  "Retract a bookmark in the database."
+  [id & [status]]
+  (try
+    (infof "delete-bookmark %s" id)
+    (let [conn (d/connect (env :database-uri))
+          e (d/q '[:find ?e :in $ ?uuid :where [?e :bookmark/id ?uuid]] (d/db conn)
+                        (java.util.UUID/fromString id))
+          response @(d/transact conn `[[:db.fn/retractEntity ~(first (first e))]])]
+      {:status (or status 200)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
            ;; Views
@@ -99,8 +108,9 @@
 
            ;; API
            (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
-           (GET "/api/bookmark/:id" [id] (get-bookmark id))
-           (POST "/api/bookmark" {params :edn-params} (post-bookmark params))
+           (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
+           (PUT "/api/bookmarks/:id" {id :id params :edn-params} [] (put-bookmark id params))
+           (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
 
            (resources "/")
            (not-found "Not Found"))
@@ -115,4 +125,4 @@
                                                #"http://localhost:3000"
                                                #"http://localhost:3449"]
                                                
-                 :access-control-allow-methods [:get :post])))
+                 :access-control-allow-methods [:get :post :put :delete])))

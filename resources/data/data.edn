@@ -1,0 +1,62 @@
+[
+ ;;;; Root
+ {:db/id #db/id[:db.part/user -1000000], :bookmark/id (datomic.api/squuid), :bookmark/name "Root"}
+
+ ;;; Searches
+ {:db/id #db/id[:db.part/user -1000001], :bookmark/id (datomic.api/squuid), :bookmark/name "Searches",
+  :bookmark/parent #db/id[:db.part/user -1000000]}
+
+   {:db/id #db/id[:db.part/user -1000011], :bookmark/id (datomic.api/squuid), :bookmark/name "Google",
+    :bookmark/url "http://www.google.com", :bookmark/parent #db/id[:db.part/user -1000001]}
+   {:db/id #db/id[:db.part/user -1000012], :bookmark/id (datomic.api/squuid), :bookmark/name "Yahoo!",
+    :bookmark/url "http://www.yahoo.com", :bookmark/parent #db/id[:db.part/user -1000001]}
+   {:db/id #db/id[:db.part/user -1000013], :bookmark/id (datomic.api/squuid), :bookmark/name "Bing",
+    :bookmark/url "http://www.bing.com", :bookmark/parent #db/id[:db.part/user -1000001]}
+   {:db/id #db/id[:db.part/user -1000014], :bookmark/id (datomic.api/squuid), :bookmark/name "DuckDuckGo",
+    :bookmark/url "http://www.duckduckgo.com", :bookmark/parent #db/id[:db.part/user -1000001]}
+   {:db/id #db/id[:db.part/user -1000015], :bookmark/id (datomic.api/squuid), :bookmark/name "Dogpile",
+    :bookmark/url "http://dogpile.com", :bookmark/parent #db/id[:db.part/user -1000001]}
+
+ ;;; Empty
+ {:db/id #db/id[:db.part/user -1000002], :bookmark/id (datomic.api/squuid), :bookmark/name "Empty",
+  :bookmark/parent #db/id[:db.part/user -1000000]}
+
+ ;;; News
+ {:db/id #db/id[:db.part/user -1000003], :bookmark/id (datomic.api/squuid), :bookmark/name "News",
+  :bookmark/parent #db/id[:db.part/user -1000000]}
+
+   ;; Network
+   {:db/id #db/id[:db.part/user -1000031], :bookmark/id (datomic.api/squuid), :bookmark/name "Network",
+    :bookmark/parent #db/id[:db.part/user -1000003]}
+
+     {:db/id #db/id[:db.part/user -1000311], :bookmark/id (datomic.api/squuid), :bookmark/name "CNN",
+      :bookmark/url "http://www.cnn.com", :bookmark/parent #db/id[:db.part/user -1000031]}
+     {:db/id #db/id[:db.part/user -1000312], :bookmark/id (datomic.api/squuid), :bookmark/name "Fox News",
+      :bookmark/url "http://www.foxnews.com", :bookmark/parent #db/id[:db.part/user -1000031]}
+
+   {:db/id #db/id[:db.part/user -1000032], :bookmark/id (datomic.api/squuid),
+    :bookmark/name "Democracy Now!", :bookmark/url "http://www.democracynow.org",
+    :bookmark/parent #db/id[:db.part/user -1000003]}
+   {:db/id #db/id[:db.part/user -1000033], :bookmark/id (datomic.api/squuid), :bookmark/name "Google News",
+    :bookmark/url "http://news.google.org", :bookmark/parent #db/id[:db.part/user -1000003]}
+
+ ;;; Home
+ {:db/id #db/id[:db.part/user -1000004], :bookmark/id (datomic.api/squuid), :bookmark/name "Home",
+  :bookmark/parent #db/id[:db.part/user -1000000]}
+
+   {:db/id #db/id[:db.part/user -1000041], :bookmark/id (datomic.api/squuid), :bookmark/name "Mail",
+    :bookmark/url "http://www.browncross.com/mail", :bookmark/parent #db/id[:db.part/user -1000004]}
+   {:db/id #db/id[:db.part/user -1000042], :bookmark/id (datomic.api/squuid),
+    :bookmark/name "Legacy Bookmarks", :bookmark/url "http://www.browncross.com/bookmarks",
+    :bookmark/parent #db/id[:db.part/user -1000004]}
+
+ {:db/id #db/id[:db.part/user -1000005], :bookmark/id (datomic.api/squuid), :bookmark/name "MST3K",
+  :bookmark/rating 5, :bookmark/url "http://www.mst3kinfo.com",
+  :bookmark/parent #db/id[:db.part/user -1000000]}
+ {:db/id #db/id[:db.part/user -1000006], :bookmark/id (datomic.api/squuid), :bookmark/name "GitHub",
+  :bookmark/url "http://www.github.com", :bookmark/parent #db/id[:db.part/user -1000000]}
+ {:db/id #db/id[:db.part/user -1000007], :bookmark/id (datomic.api/squuid), :bookmark/name "Slashdot",
+  :bookmark/url "http://www.slashdot.com", :bookmark/parent #db/id[:db.part/user -1000000]}
+ {:db/id #db/id[:db.part/user -1000008], :bookmark/id (datomic.api/squuid), :bookmark/name "Devcards",
+  :bookmark/rating 3, :bookmark/url "cards.html", :bookmark/parent #db/id[:db.part/user -1000000]}
+ ]

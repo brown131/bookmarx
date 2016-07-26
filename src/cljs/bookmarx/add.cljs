@@ -4,14 +4,13 @@
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
             [taoensso.timbre :as log]
+            [cemerick.url :refer [url]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [bookmarx.env :refer [env]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
-
-(enable-console-print!)
 
 (defn row
   [label input]
@@ -21,7 +20,7 @@
 
 (def form-template
   [:div
-   [:div {:field :container :visible? #(:add? %)}
+   [:div {:field :container :visible? #(and (:add? %) (not (:query? %)))}
     [row "Folder?" [:input.form-control {:field :checkbox :id :folder?}]]]
    [row "Name" [:input.form-control {:field :text :id :bookmark/name}]]
    [:div {:field :container :visible? #(not (:folder? %))}
@@ -37,7 +36,7 @@
   (swap! doc #(assoc @doc :bookmark/parent {:db/id (session/get :active)}))
 
   ;; Update the state in the remote repository.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add?)
+  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :query?)
             body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
                                        {:edn-params bookmark
                                         :with-credentials? false
@@ -46,11 +45,11 @@
               parent (session/get parent-id)]
           (log/debugf "body %s" body)
             
-          ;; Set the new ids and remove the add? flag.
+          ;; Set the new ids and remove the add flags.
           (swap! doc #(-> @doc
                           (assoc :db/id (:db/id body)
                                  :bookmark/id (:bookmark/id body))
-                          (dissoc :add?))
+                          (dissoc :add? :query?))
 
           ;; Add the new folder to the session.
           (when (:folder? @doc) (session/put! (:db/id @doc) @doc))
@@ -86,7 +85,6 @@
   (log/debugf "delete")
 
   ;; TODO: Remove the bookmark from the session.
-
   (go (let [bookmark (dissoc @doc :bookmark/_parent :folder?)]
         (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
                          {:edn-params bookmark
@@ -110,5 +108,11 @@
   []
   [:div {:class "col-sm-12"}
    [header/header]
-   (let [doc (if (session/get :add) (atom (session/get :add)) (atom {:add? true}))]
+   (let [doc (if (session/get :add) 
+                 (atom (session/get :add))
+                 (let [q (:query (url (-> js/window .-location .-href)))]
+                   (if q (atom {:add? true :query? true :bookmark/name (get q "name") 
+                                :bookmark/url (get q "url")})
+                         (atom {:add? true}))))]
+     (log/debugf "doc %s" @doc)
      [editor doc [bind-fields form-template doc]])])

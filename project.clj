@@ -18,6 +18,7 @@
                  [com.datomic/datomic-pro "0.9.5350" :exclusions [joda-time com.google.guava/guava]]
                  [compojure "1.5.1"]
                  [hiccup "1.0.5"]
+                 [com.cemerick/url "0.1.1"]
                  [yogthos/config "0.8"]
                  [com.taoensso/timbre "4.7.0"]
                  [org.clojure/clojurescript "1.9.92" :scope "provided"]

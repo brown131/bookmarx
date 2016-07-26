@@ -15,8 +15,8 @@
 (defn row
   [label input]
   [:div.row
-   [:div.col-md-2 ^{:key label} [:label label]]
-   [:div.col-md-5 ^{:key input} input]])
+   [:div.col-sm-2 ^{:key label} [:label label]]
+   [:div.col-sm-5 ^{:key input} input]])
 
 (def form-template
   [:div
@@ -67,6 +67,7 @@
       (session/put! (:db/id @doc)
                     (assoc @doc :bookmark/_parent
                            (:bookmark/_parent (session/get (:db/id @doc))))))
+
     ;; Update the parent's children with the updated child.
     (session/put! parent-id
                   (update-in parent [:bookmark/_parent]
@@ -84,7 +85,16 @@
   [doc]
   (log/debugf "delete")
 
-  ;; TODO: Remove the bookmark from the session.
+  ;; Remove the bookmark from the session.
+  (when (:folder? @doc) (session/remove! (:db/id @doc)))
+                  
+  ;; Remove the bookmark from the parent's children.
+  (let [parent-id (get-active)
+        parent (session/get parent-id)
+        children (:bookmark/_parent parent)]
+    (session/put! parent-id
+                  (update-in parent [:bookmark/_parent]
+                             #(remove (fn [b] (= (:db/id b) (:db/id @doc))) children))))
 
   (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :delete?)]
         (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))

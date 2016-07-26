@@ -1,11 +1,12 @@
 (ns bookmarx.core
   (:require [reagent.core :as reagent :refer [atom]]
+            [reagent.cookies :as cookies]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env]]
+            [bookmarx.env :refer [env set-active]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
             [bookmarx.home :as home])
@@ -39,8 +40,9 @@
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                   {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) (:body response))
-            active (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))]
-        (session/put! :active active)
+            active (cookies/get "active" 
+                                (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks))))]
+        (set-active active)
         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
         (doall (map #(session/put! (:db/id %) %) bookmarks))))
   (secretary/set-config! :prefix "/bookmark")

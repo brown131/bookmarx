@@ -1,7 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.env :refer [env]]
+            [bookmarx.env :refer [env set-active]]
             [bookmarx.header :as header]))
 
 (enable-console-print!)
@@ -40,7 +40,7 @@
   (if active?
     [:li {:class "active" :key (str id "-bc-key")} name]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(session/put! :active id) :key (str id "-a-key")} name]]))
+     [:a {:on-click #(set-active id) :key (str id "-a-key")} name]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
@@ -69,7 +69,7 @@
               :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
               :on-click #(session/put! :add (assoc mark :folder? true))}]
          [:a {:class "bookmark" :key (str id "-name-key")
-              :on-click #(session/put! :active id)} name]
+              :on-click #(set-active id)} name]
          (when open? [:ul {:class "nav nav-pills nav-stacked":key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) _parent))])]))))
 

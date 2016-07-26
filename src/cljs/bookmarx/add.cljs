@@ -7,7 +7,7 @@
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env]]
+            [bookmarx.env :refer [env get-active]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -41,7 +41,7 @@
                                        {:edn-params bookmark
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        (let [parent-id (session/get :active)
+        (let [parent-id (get-active)
               parent (session/get parent-id)]
           (log/debugf "body %s" body)
             
@@ -85,7 +85,8 @@
   (log/debugf "delete")
 
   ;; TODO: Remove the bookmark from the session.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder?)]
+
+  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :delete?)]
         (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
                          {:edn-params bookmark
                           :with-credentials? false
@@ -93,6 +94,7 @@
       
 (defn save-bookmark "Save a bookmark."
   [doc]
+  (log/debugf "save %s" @doc)
   (cond (:add? @doc) (add-bookmark doc)
         (:delete? @doc) (delete-bookmark doc)
         :else (upsert-bookmark doc))
@@ -114,5 +116,4 @@
                    (if q (atom {:add? true :query? true :bookmark/name (get q "name") 
                                 :bookmark/url (get q "url")})
                          (atom {:add? true}))))]
-     (log/debugf "doc %s" @doc)
      [editor doc [bind-fields form-template doc]])])

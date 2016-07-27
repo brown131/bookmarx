@@ -26,14 +26,15 @@
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [:input.form-control {:field :text :id :bookmark/rating}]]]
-   [:div {:field :container :visible? #(not (:add? %))}
+   [row "Parent Folder" [:label (str (session/get (get-active)))]]
+    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]
    ])
 
 (defn add-bookmark "Add a new bookmark."
   [doc]
   ;; Add the parent to the bookmark.
-  (swap! doc #(assoc @doc :bookmark/parent {:db/id (session/get :active)}))
+  (swap! doc #(assoc @doc :bookmark/parent {:db/id (get-active)}))
 
   ;; Update the state in the remote repository.
   (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :query?)

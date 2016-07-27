@@ -10,8 +10,7 @@
   [:span
    [:nav.header-nav
     [:div.container-fluid
-     [:span.header-navbar "Bookmarx"]
-     [:span.header-navbar.header-star]
+     [:span.header-navbar "Bookmarx" [:span.header-star]]
      (when full?
       [:form.navbar-form {:role "search"}
         [:span.navbar-right
@@ -23,6 +22,7 @@
            [:span.glyphicon.glyphicon-menu-hamburger {:color "white"}]]
           [:ul.dropdown-menu
            [:li [:a {:href (str (:prefix env) "/about")} "About..."]]
-           [:li [:a {:href (str (:prefix env) "/add") :on-click #(session/remove! :add)} "Add Bookmark..."]]
+           [:li [:a {:href (str (:prefix env) "/add") 
+                     :on-click #(session/remove! :add)} "Add Bookmark..."]]
            [:li [:a {:href "#"} "Show"]]
            [:li [:a {:href "#"} "Sort"]]]]]])]]]))

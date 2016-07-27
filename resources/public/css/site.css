@@ -6462,6 +6462,8 @@ button.close {
 .modal-footer:after,
 .header-navbar:before,
 .header-navbar:after,
+.header-star:before,
+.header-star:after,
 .header-pills:before,
 .header-pills:after,
 .header-nav:before,
@@ -6486,6 +6488,7 @@ button.close {
 .modal-header:after,
 .modal-footer:after,
 .header-navbar:after,
+.header-star:after,
 .header-pills:after,
 .header-nav:after {
   clear: both;
@@ -6734,7 +6737,11 @@ button.close {
   }
 }
 .header-navbar {
+  display: inline-block;
+  margin-top: 10px;
+  margin-bottom: 10px;
   font-size: 26pt;
+  font-weight: bold;
   color: red;
 }
 @media (min-width: 768px) {
@@ -6743,6 +6750,37 @@ button.close {
   }
 }
 .header-navbar:hover {
+  color: red;
+  text-decoration: none;
+}
+.header-star {
+  position: relative;
+  top: 1px;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 26pt;
+  font-weight: bold;
+  color: red;
+  font-size: 30pt;
+  font-weight: normal;
+  margin-top: 10px;
+  padding-left: 10px;
+  padding-right: 20px;
+}
+.header-star:before {
+  content: "\e007";
+}
+@media (min-width: 768px) {
+  .header-star {
+    float: left;
+  }
+}
+.header-star:hover {
   color: red;
   text-decoration: none;
 }
@@ -7110,24 +7148,6 @@ fieldset[disabled] .header-nav .btn-link:focus {
     border-radius: 0;
   }
 }
-.header-star {
-  position: relative;
-  top: 1px;
-  display: inline-block;
-  font-family: 'Glyphicons Halflings';
-  font-style: normal;
-  font-weight: normal;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-size: 33pt;
-  margin-top: 3px;
-  padding-left: 10px;
-  padding-right: 20px;
-}
-.header-star:before {
-  content: "\e007";
-}
 .breadcrumbs {
   padding: 8px 15px;
   margin-bottom: 20px;
@@ -7284,14 +7304,4 @@ fieldset[disabled] .header-nav .btn-link:focus {
 }
 .bookmark.a {
   color: black;
-}
-@media (max-width: 767px) {
-  body {
-    padding-top: 140px;
-  }
-}
-@media (min-width: 768px) {
-  body {
-    padding-top: 70px;
-  }
 }

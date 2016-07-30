@@ -12,25 +12,6 @@
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn row
-  [label input]
-  [:div.row
-   [:div.col-sm-2 ^{:key label} [:label label]]
-   [:div.col-sm-5 ^{:key input} input]])
-
-(def form-template
-  [:div
-   [:div {:field :container :visible? #(and (:add? %) (not (:query? %)))}
-    [row "Folder?" [:input.form-control {:field :checkbox :id :folder?}]]]
-   [row "Name" [:input.form-control {:field :text :id :bookmark/name}]]
-   [:div {:field :container :visible? #(not (:folder? %))}
-    [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
-    [row "Rating" [:input.form-control {:field :text :id :bookmark/rating}]]]
-   [row "Parent Folder" [:label (str (session/get (get-active)))]]
-    [:div {:field :container :visible? #(not (:add? %))}
-    [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]
-   ])
-
 (defn add-bookmark "Add a new bookmark."
   [doc]
   ;; Add the parent to the bookmark.
@@ -113,6 +94,53 @@
   ; Return to the home page.
   (accountant/navigate! (str (:prefix env) "/")))
 
+(defn -update-rating
+  [doc elem]
+  (swap! doc update-in [:bookmark/rating]
+         #(-> elem .-target (.getAttribute "data-index") js/parseInt)))
+
+(defn rating-star [index doc]
+  [:span {:class (cond
+                   (= index 0) ""
+                   (<= index (get-in @doc [:bookmark/rating]))  "glyphicon glyphicon-star"
+                   :else "glyphicon glyphicon-star-empty")
+          :key (str "rating-star-" index) :data-index index
+          :on-mouse-enter #(-update-rating doc %) :on-click #(-update-rating doc %)}
+   (when (= index 0) "_")])
+
+(defn rating-stars [doc]
+  [:div
+   (for [i (range 0 6)]
+     [rating-star i doc])])
+
+(defn -select-parent "Select the parent for the bookmark."
+  [doc]
+  (session/update-in! [:add :bookmark/parent :db/id] #(session/get :selected))
+  ;; TODO: Use a pop-up dialog
+  (accountant/navigate! (str (:prefix env) "/select")))
+
+(defn row
+  [label input]
+  [:div.row
+   [:div.col-sm-2 ^{:key label} [:label label]]
+   [:div.col-sm-5 ^{:key input} input]])
+
+(defn form-template
+  [doc]
+  [:div
+   [:div {:field :container :visible? #(and (:add? %) (not (:query? %)))}
+    [row "Folder?" [:input.form-control {:field :checkbox :id :folder?}]]]
+   [row "Name" [:input.form-control {:field :text :id :bookmark/name}]]
+   [:div {:field :container :visible? #(not (:folder? %))}
+    [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
+    [row "Rating" [rating-stars doc]]]
+   ;[row "Parent Folder" [:a.bookmark {:on-click #(-select-parent doc)
+   ;                                   :href (str (:prefix env) "/select")}
+   ;                      (:bookmark/name (session/get (:db/id (:bookmark/parent @doc))))]]
+   [:div {:field :container :visible? #(not (:add? %))}
+    [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]
+   ])
+
 (defn editor [doc & body]
   [:div body
    [:button.btn.btn-default {:on-click #(save-bookmark doc)} "Save"]])
@@ -121,10 +149,10 @@
   []
   [:div {:class "col-sm-12"}
    [header/header]
-   (let [doc (if (session/get :add) 
+   (let [doc (if (session/get :add)
                  (atom (session/get :add))
                  (let [q (:query (url (-> js/window .-location .-href)))]
-                   (if q (atom {:add? true :query? true :bookmark/name (get q "name") 
+                   (if q (atom {:add? true :query? true :bookmark/name (get q "name")
                                 :bookmark/url (get q "url")})
                          (atom {:add? true}))))]
-     [editor doc [bind-fields form-template doc]])])
+     [editor doc [bind-fields (form-template doc) doc]])])

@@ -9,7 +9,9 @@
             [bookmarx.env :refer [env set-active]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.home :as home])
+            [bookmarx.home :as home]
+            [bookmarx.select :as select]
+            [bookmarx.search :as search])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -21,11 +23,20 @@
     (update-in folder [:bookmark/_parent]
                #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))
 
-(secretary/defroute (str (:prefix env) "/") [] (session/put! :current-page #'home/home-page))
+(secretary/defroute (str (:prefix env) "/") []
+                    (session/put! :current-page #'home/home-page))
 
-(secretary/defroute (str (:prefix env) "/about") [] (session/put! :current-page #'about/about-page))
+(secretary/defroute (str (:prefix env) "/about") []
+                    (session/put! :current-page #'about/about-page))
 
-(secretary/defroute (str (:prefix env) "/add") [] (session/put! :current-page #'add/add-page))
+(secretary/defroute (str (:prefix env) "/add") []
+                    (session/put! :current-page #'add/add-page))
+
+(secretary/defroute (str (:prefix env) "/select") []
+                    (session/put! :current-page #'select/select-page))
+
+(secretary/defroute (str (:prefix env) "/search") []
+                    (session/put! :current-page #'search/search-page))
 
 (defn current-page "Render the current page."
   []
@@ -40,9 +51,10 @@
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                   {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) (:body response))
-            active (cookies/get "active" 
-                                (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks))))]
+            root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
+            active (cookies/get "active" root)]
         (set-active active)
+        (session/put! :root root)
         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
         (doall (map #(session/put! (:db/id %) %) bookmarks))))
   (secretary/set-config! :prefix "/bookmark")

@@ -22,6 +22,28 @@
   padding-right: 20px;
 }
 
+.header-button {
+  .btn;
+  .btn-default;
+  color: white;
+  background-color: black;
+  border-color: black;
+  &:hover {
+    color: white;
+    background-color: dimgrey;
+    border-color: dimgrey;
+    text-decoration: none;
+  }
+  @media (max-width: 320px) {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  @media (min-width: 321px) and (max-width: 767px) {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
 .header-nav {
   .nav;
   .navbar-inverse;
@@ -119,4 +141,13 @@
 
 .bookmark.a {
   color: black;
+}
+
+body {
+  @media (max-width: 767px) {
+    padding-top: 140px;
+  }
+  @media (min-width: 768px) {
+    padding-top: 70px;
+  }
 }

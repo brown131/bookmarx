@@ -49,7 +49,7 @@
     (info "get-bookmarks")
     (let [conn (d/connect (env :database-uri))
           bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
-                                           :bookmark/parent {:bookmark/_parent 1}])
+                                           :bookmark/rating :bookmark/parent {:bookmark/_parent 1}])
                            :where [?e :bookmark/id]
                            [(missing? $ ?e :bookmark/url)]] (d/db conn))
           headers {"content-type" "application/edn"}]
@@ -105,6 +105,8 @@
            (GET "/add" [] loading-page)
            (GET "/about" [] loading-page)
            (GET "/cards" [] cards-page)
+           (GET "/select" [] loading-page)
+           (GET "/search" [] loading-page)
 
            ;; API
            (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))

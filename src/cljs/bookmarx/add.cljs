@@ -94,29 +94,30 @@
   ; Return to the home page.
   (accountant/navigate! (str (:prefix env) "/")))
 
-(defn -update-rating
-  [doc elem]
-  (swap! doc update-in [:bookmark/rating]
-         #(-> elem .-target (.getAttribute "data-index") js/parseInt)))
-
-(defn rating-star [index doc]
-  [:span {:class (cond
-                   (= index 0) ""
-                   (<= index (get-in @doc [:bookmark/rating]))  "glyphicon glyphicon-star"
-                   :else "glyphicon glyphicon-star-empty")
+(defn rating-star "Renders a bookmark rating star."
+  [index doc]
+  [:span {:class (if (<= index (if (get-in @doc [:rating-clicked])
+                                 (get-in @doc [:bookmark/rating])
+                                 (get-in @doc [:rating])))
+                   "glyphicon glyphicon-star"
+                   "glyphicon glyphicon-star-empty")
           :key (str "rating-star-" index) :data-index index
-          :on-mouse-enter #(-update-rating doc %) :on-click #(-update-rating doc %)}
-   (when (= index 0) "_")])
+          :on-mouse-enter #(do
+                            (swap! doc update-in [:rating-clicked] (fn [] false))
+                            (swap! doc update-in [:rating] (fn [] index)))
+          :on-mouse-leave #(swap! doc update-in [:rating] (fn [] 0))
+          :on-click #(do
+                      (swap! doc update-in [:rating-clicked] (fn [] true))
+                      (swap! doc update-in [:bookmark/rating] (fn [] index)))}])
 
-(defn rating-stars [doc]
-  [:div
-   (for [i (range 0 6)]
-     [rating-star i doc])])
+(defn rating-stars "Render stars for rating bookmarks."
+  [doc]
+  [:div (for [i (range 1 6)]
+          [rating-star i doc])])
 
 (defn -select-parent "Select the parent for the bookmark."
   [doc]
   (session/update-in! [:add :bookmark/parent :db/id] #(session/get :selected))
-  ;; TODO: Use a pop-up dialog
   (accountant/navigate! (str (:prefix env) "/select")))
 
 (defn row
@@ -145,14 +146,18 @@
   [:div body
    [:button.btn.btn-default {:on-click #(save-bookmark doc)} "Save"]])
 
+(defn init-page-state "Initialized the state of the Add/Edit page."
+  []
+  (atom (assoc (if (session/get :add)
+                 (session/get :add)
+                 (let [q (:query (url (-> js/window .-location .-href)))]
+                   (if q {:add? true :query? true :bookmark/name (get q "name")
+                          :bookmark/url (get q "url")}
+                         {:add? true}))) :rating 0 :rating-clicked true)))
+
 (defn add-page "Render the Add/Edit page."
   []
   [:div {:class "col-sm-12"}
    [header/header]
-   (let [doc (if (session/get :add)
-                 (atom (session/get :add))
-                 (let [q (:query (url (-> js/window .-location .-href)))]
-                   (if q (atom {:add? true :query? true :bookmark/name (get q "name")
-                                :bookmark/url (get q "url")})
-                         (atom {:add? true}))))]
+   (let [doc (init-page-state)]
      [editor doc [bind-fields (form-template doc) doc]])])

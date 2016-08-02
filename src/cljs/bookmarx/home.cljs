@@ -50,6 +50,7 @@
               :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
               :on-click #(session/put! :add (assoc bookmark :folder? true))}]
          [:a.bookmark {:key (str id "-name-key") :on-click #(set-active id)} name]
+         [:span.badge (count _parent)]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) _parent))])]))))
 

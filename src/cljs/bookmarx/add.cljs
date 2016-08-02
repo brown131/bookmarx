@@ -12,32 +12,29 @@
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn -clean-doc "Remove temporary fields from the page document."
+  [doc]
+  (dissoc @doc :bookmark/_parent :orig-parent :folder? :add? :delete? :query? :rating :rating-clicked))
+
 (defn add-bookmark "Add a new bookmark."
   [doc]
-  ;; Add the parent to the bookmark.
-  (swap! doc #(assoc @doc :bookmark/parent {:db/id (get-active)}))
-
   ;; Update the state in the remote repository.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :query? :rating :rating-clicked)
-            body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                       {:edn-params bookmark
+  (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
+                                       {:edn-params (-clean-doc doc)
                                         :with-credentials? false
-                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        (let [parent-id (get-active)
-              parent (session/get parent-id)]
+                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))
+            parent-id (get-active)
+            parent (session/get parent-id)]
           (log/debugf "body %s" body)
             
           ;; Set the new ids and remove the add flags.
-          (swap! doc #(-> @doc
-                          (assoc :db/id (:db/id body)
-                                 :bookmark/id (:bookmark/id body))
-                          (dissoc :add? :query?))
+          (swap! doc #(assoc @doc :db/id (:db/id body) :bookmark/id (:bookmark/id body)))
 
           ;; Add the new folder to the session.
           (when (:folder? @doc) (session/put! (:db/id @doc) @doc))
                   
           ;; Add the bookmark to the parent's children.
-          (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc))))))))
+          (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc))))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]
@@ -57,11 +54,10 @@
                                    children))))
 
   ;; Update the state in the remote repository.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :rating :rating-clicked)]
-        (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
-                      {:edn-params bookmark
-                       :with-credentials? false
-                       :headers {"x-csrf-token" (session/get :csrf-token)}})))))
+  (go (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
+                    {:edn-params (-clean-doc doc)
+                     :with-credentials? false
+                     :headers {"x-csrf-token" (session/get :csrf-token)}}))))
   
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
@@ -78,11 +74,10 @@
                   (update-in parent [:bookmark/_parent]
                              #(remove (fn [b] (= (:db/id b) (:db/id @doc))) children))))
 
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :delete?)]
-        (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
-                         {:edn-params bookmark
-                          :with-credentials? false
-                          :headers {"x-csrf-token" (session/get :csrf-token)}})))))
+  (go (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
+                       {:edn-params (-clean-doc doc)
+                        :with-credentials? false
+                        :headers {"x-csrf-token" (session/get :csrf-token)}}))))
       
 (defn save-bookmark "Save a bookmark."
   [doc]
@@ -118,10 +113,19 @@
   [:div (for [i (range 1 6)]
           [rating-star i doc])])
 
-(defn -select-parent "Select the parent for the bookmark."
+(defn folder-selector "Render parent folder selection."
   [doc]
-  (session/update-in! [:add :bookmark/parent :db/id] #(session/get :selected))
-  (accountant/navigate! (str (:prefix env) "/select")))
+  [:a.bookmark {:on-click #(do
+                             (when-not (session/get :add)
+                               (session/put! :add @doc))
+                             (when-not (session/get-in [:add :orig-parent])
+                               (session/update-in! [:add :orig-parent] 
+                                                   (session/get-in [:add :parent])))
+                             (accountant/navigate! (str (:prefix env) "/select")))
+                :href (str (:prefix env) "/select")}
+   (:bookmark/name (session/get (if (:db/id (:bookmark/parent @doc))
+                                  (:db/id (:bookmark/parent @doc))
+                                  (get-active))))])
 
 (defn row
   [label input]
@@ -138,12 +142,7 @@
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [rating-stars doc]]]
-    [row "Parent Folder" [:a.bookmark {:on-click #(-select-parent doc)
-                                      :href (str (:prefix env) "/select")}
-                         #_(:bookmark/name (session/get (if (@doc :add?)
-                                                        (session/get :active)
-                                                        (:db/id (:bookmark/parent @doc)))))
-                         ]]
+    [row "Parent Folder" [folder-selector doc]]
    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 
@@ -155,10 +154,14 @@
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)
-                 (let [q (:query (url (-> js/window .-location .-href)))]
-                   (if q {:add? true :query? true :bookmark/name (get q "name")
-                          :bookmark/url (get q "url")}
-                         {:add? true}))) :rating 0 :rating-clicked true)))
+                 (let [parent (if (session/get-in [(get-active) :bookmark/parent])
+                                (session/get-in [(get-active) :bookmark/parent])
+                                {:db/id (session/get :root)})
+                       q (:query (url (-> js/window .-location .-href)))]
+                   (merge {:add? true :bookmark/parent parent :orig-parent parent}
+                          (when q {:add? true :query? true :bookmark/name (get q "name")
+                                   :bookmark/url (get q "url")}))))
+               :rating 0 :rating-clicked true)))
 
 (defn add-page "Render the Add/Edit page."
   []

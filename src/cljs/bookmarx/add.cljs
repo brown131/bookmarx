@@ -18,7 +18,7 @@
   (swap! doc #(assoc @doc :bookmark/parent {:db/id (get-active)}))
 
   ;; Update the state in the remote repository.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :query?)
+  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :add? :query? :rating :rating-clicked)
             body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
                                        {:edn-params bookmark
                                         :with-credentials? false
@@ -57,7 +57,7 @@
                                    children))))
 
   ;; Update the state in the remote repository.
-  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder?)]
+  (go (let [bookmark (dissoc @doc :bookmark/_parent :folder? :rating :rating-clicked)]
         (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
                       {:edn-params bookmark
                        :with-credentials? false
@@ -105,7 +105,10 @@
           :on-mouse-enter #(do
                             (swap! doc update-in [:rating-clicked] (fn [] false))
                             (swap! doc update-in [:rating] (fn [] index)))
-          :on-mouse-leave #(swap! doc update-in [:rating] (fn [] 0))
+          :on-mouse-leave #(do
+                             (swap! doc update-in [:rating] (fn [] 0))
+                             (when-not (:rating-clicked @doc)
+                               (swap! doc update-in [:bookmark/rating] (fn [] 0))))
           :on-click #(do
                       (swap! doc update-in [:rating-clicked] (fn [] true))
                       (swap! doc update-in [:bookmark/rating] (fn [] index)))}])
@@ -135,12 +138,14 @@
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [rating-stars doc]]]
-   ;[row "Parent Folder" [:a.bookmark {:on-click #(-select-parent doc)
-   ;                                   :href (str (:prefix env) "/select")}
-   ;                      (:bookmark/name (session/get (:db/id (:bookmark/parent @doc))))]]
+    [row "Parent Folder" [:a.bookmark {:on-click #(-select-parent doc)
+                                      :href (str (:prefix env) "/select")}
+                         #_(:bookmark/name (session/get (if (@doc :add?)
+                                                        (session/get :active)
+                                                        (:db/id (:bookmark/parent @doc)))))
+                         ]]
    [:div {:field :container :visible? #(not (:add? %))}
-    [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]
-   ])
+    [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 
 (defn editor [doc & body]
   [:div body

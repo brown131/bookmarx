@@ -6,7 +6,7 @@
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env set-active]]
+            [bookmarx.env :refer [env set-active sort-folder-children]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
             [bookmarx.home :as home]
@@ -16,12 +16,6 @@
     [cljs.core.async.macros :refer [go go-loop]]))
 
 (enable-console-print!)
-
-(defn sort-folder-children "Sort the children of a folder by a sort key."
-  [folder sort-key]
-  (let [[l f] (map vec ((juxt filter remove) #(:bookmark/url %) (:bookmark/_parent folder)))]
-    (update-in folder [:bookmark/_parent]
-               #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))
 
 (secretary/defroute (str (:prefix env) "/") []
                     (session/put! :current-page #'home/home-page))

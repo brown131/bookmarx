@@ -13,3 +13,9 @@
 (defn get-active "Get the active folder from the cookie or else the session."
   []
   (cookies/get "active" (session/get :active)))
+
+(defn sort-folder-children "Sort the children of a folder by a sort key."
+  [folder sort-key]
+  (let [[l f] (map vec ((juxt filter remove) #(:bookmark/url %) (:bookmark/_parent folder)))]
+    (update-in folder [:bookmark/_parent]
+               #(into [] (concat (sort-by sort-key f) (sort-by sort-key l))))))

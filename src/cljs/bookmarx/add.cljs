@@ -7,7 +7,7 @@
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env get-active]]
+            [bookmarx.env :refer [env get-active sort-folder-children]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -23,35 +23,44 @@
                                        {:edn-params (-clean-doc doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            parent-id (get-active)
+            parent-id (get-in @doc [:bookmark/parent :db/id])
             parent (session/get parent-id)]
-          (log/debugf "body %s" body)
-            
-          ;; Set the new ids and remove the add flags.
-          (swap! doc #(assoc @doc :db/id (:db/id body) :bookmark/id (:bookmark/id body)))
+          ;; Set the new ids.
+          (swap! doc assoc @doc :db/id (:db/id body) :bookmark/id (:bookmark/id body))
 
           ;; Add the new folder to the session.
-          (when (:folder? @doc) (session/put! (:db/id @doc) @doc))
+          (when (:folder? @doc) (session/put! (:db/id @doc) (-clean-doc doc)))
                   
           ;; Add the bookmark to the parent's children.
-          (session/put! parent-id (update-in parent [:bookmark/_parent] #(conj % @doc))))))
+          (session/put! parent-id (sort-folder-children 
+                                   (update-in parent [:bookmark/_parent] 
+                                              #(conj % (-clean-doc doc))) :bookmark/name)))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]
   (let [parent-id (get-in @doc [:bookmark/parent :db/id])
         parent (session/get parent-id)
+        orig-parent-id (get-in @doc [:orig-parent :db/id])
+        orig-parent (session/get orig-parent-id)
         children (:bookmark/_parent parent)]
     ;; Replace the children of the folder with the children from the session folder.
     (when (:folder? @doc)
       (session/put! (:db/id @doc)
-                    (assoc @doc :bookmark/_parent
+                    (assoc (-clean-doc doc) :bookmark/_parent
                            (:bookmark/_parent (session/get (:db/id @doc))))))
 
     ;; Update the parent's children with the updated child.
-    (session/put! parent-id
-                  (update-in parent [:bookmark/_parent]
-                             #(map (fn [b] (if (= (:db/id b) (:db/id @doc)) @doc b))
-                                   children))))
+    (session/put! parent-id (sort-folder-children 
+                             (update-in parent [:bookmark/_parent] 
+                                        #(conj % (-clean-doc doc))) :bookmark/name))
+
+    ;; Removed the bookmark from the folder that it was moved out of.
+    #_(when (and orig-parent-id (not= parent-id orig-parent-id))
+      (session/put! orig-parent-id 
+                    (update-in orig-parent [:bookmark/_parent]
+                               #(into {} (filter (fn [b] (not= (:db/id (second b)) (:db/id @doc)))
+                                                 (:bookmark/_parent orig-parent)))))))
+
 
   ;; Update the state in the remote repository.
   (go (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
@@ -154,9 +163,7 @@
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)
-                 (let [parent (if (session/get-in [(get-active) :bookmark/parent])
-                                (session/get-in [(get-active) :bookmark/parent])
-                                {:db/id (session/get :root)})
+                 (let [parent {:db/id (if (get-active) (get-active) (session/get :root))}
                        q (:query (url (-> js/window .-location .-href)))]
                    (merge {:add? true :bookmark/parent parent :orig-parent parent}
                           (when q {:add? true :query? true :bookmark/name (get q "name")

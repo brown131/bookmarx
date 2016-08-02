@@ -73,8 +73,8 @@
       (infof "response %s" (str response))
       {:status (or status 200)
        :headers {"content-type" "application/edn"}
-       :body {:db/id (second (first (vec (:tempids response))))
-              :bookmark/id id}})
+       :body (pr-str {:db/id (second (first (vec (:tempids response))))
+                      :bookmark/id id})})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn put-bookmark

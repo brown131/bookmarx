@@ -11,18 +11,11 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id #db/id[:db.part/db]
-  :db/ident :bookmark/name
+  :db/ident :bookmark/title
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db/fulltext true
   :db/doc "Bookmark Name"
-  :db.install/_attribute :db.part/db}
-
- {:db/id #db/id[:db.part/db]
-  :db/ident :bookmark/parent
-  :db/valueType :db.type/ref
-  :db/cardinality :db.cardinality/one
-  :db/doc "Parent Folder"
   :db.install/_attribute :db.part/db}
 
   {:db/id #db/id[:db.part/db]
@@ -38,5 +31,33 @@
   :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
   :db/doc "Link Rating"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/parent
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "Parent Folder"
+  :db.install/_attribute :db.part/db}
+ 
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/visits
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "Link Visits"
+  :db.install/_attribute :db.part/db}
+ 
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/created
+  :db/valueType :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/doc "Link Created"
+  :db.install/_attribute :db.part/db}
+ 
+ {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/last-visited
+  :db/valueType :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/doc "Link Last Visited"
   :db.install/_attribute :db.part/db}
 ]

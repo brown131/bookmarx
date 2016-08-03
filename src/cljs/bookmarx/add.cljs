@@ -55,12 +55,13 @@
                                         #(conj % (-clean-doc doc))) :bookmark/name))
 
     ;; Removed the bookmark from the folder that it was moved out of.
-    #_(when (and orig-parent-id (not= parent-id orig-parent-id))
+    (log/debugf "orig parent %s" (remove (fn [b] (= (:db/id b) (:db/id @doc))) 
+                                         (:bookmark/_parent orig-parent)))
+    (when (and orig-parent-id (not= parent-id orig-parent-id))
       (session/put! orig-parent-id 
                     (update-in orig-parent [:bookmark/_parent]
-                               #(into {} (filter (fn [b] (not= (:db/id (second b)) (:db/id @doc)))
-                                                 (:bookmark/_parent orig-parent)))))))
-
+                               #(remove (fn [b] (= (:db/id b) (:db/id @doc))) 
+                                        (:bookmark/_parent orig-parent))))))
 
   ;; Update the state in the remote repository.
   (go (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
@@ -125,11 +126,11 @@
 (defn folder-selector "Render parent folder selection."
   [doc]
   [:a.bookmark {:on-click #(do
-                             (when-not (session/get :add)
-                               (session/put! :add @doc))
-                             (when-not (session/get-in [:add :orig-parent])
-                               (session/update-in! [:add :orig-parent] 
-                                                   (session/get-in [:add :parent])))
+                             (when-not (:orig-parent @doc)
+                               (swap! doc update-in [:orig-parent] (fn [] (:bookmark/parent @doc))))
+                             (if (session/get :add)
+                               (session/update-in! [:add :orig-parent] (fn [] (:bookmark/parent @doc)))
+                               (session/put! [:add] @doc))
                              (accountant/navigate! (str (:prefix env) "/select")))
                 :href (str (:prefix env) "/select")}
    (:bookmark/name (session/get (if (:db/id (:bookmark/parent @doc))
@@ -151,7 +152,10 @@
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [rating-stars doc]]]
-    [row "Parent Folder" [folder-selector doc]]
+   [row "Parent Folder" [folder-selector doc]]
+   [row "Icon" [:button.btn.btn-default
+                ;{:on-click #(reagent-modals/modal! [:div "some message to the user!"])} 
+                "Select"]]
    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 
@@ -159,7 +163,7 @@
   [:div body
    [:button.btn.btn-default {:on-click #(save-bookmark doc)} "Save"]])
 
-(defn init-page-state "Initialized the state of the Add/Edit page."
+(defn init-page-state "Initialize the state of the Add/Edit page."
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)

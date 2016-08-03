@@ -26,8 +26,6 @@
   []
   [:div.col-sm-12
      [header/header]
-     [bookmark-tree (session/get (session/get :root))]
-    [:div "add" (session/get :add)]
-   ])
+     [bookmark-tree (session/get (session/get :root))]])
 
 

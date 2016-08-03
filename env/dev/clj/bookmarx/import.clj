@@ -63,10 +63,34 @@
     (println (str tx))
     @(transact conn tx)))
 
+
+;'beer.gif'
+;'bludiamd.gif'
+;'bluered.gif'
+;'blusqare.gif'
+;'con-blue.gif'
+;'con-cyan.gif'
+;'con-green.gif'
+;'con-oran.gif'
+;'con-red.gif'
+;'de.gif'
+;'die4.gif'
+;'grnsqare.gif'
+;'lock.gif'
+;'orgstar.gif'
+;'redball.gif'
+;'reddiamd.gif'
+;'sun.gif'
+;'whtpearl.gif'
+;'ylwsqare.gif'
+
 ;;; Import links.
-(doseq [rs (j/query db-spec ["select id, title, url, rate, parent from bookmark where url <> ''"])]
-  (let [tx1 {:db/id #db/id[:db.part/user] :bookmark/id (squuid) :bookmark/name (:title rs)
-             :bookmark/url (:url rs) :bookmark/parent (get dbids (get uids (:parent rs)))}
+(doseq [rs (j/query db-spec ["select id, title, url, rate, parent, visit, created, lastvisit from bookmark where url <> ''"])]
+  (let [tx1 {:db/id #db/id[:db.part/user] :bookmark/id (squuid) :bookmark/title (:title rs)
+             :bookmark/url (:url rs) :bookmark/rating (:rate rs)
+             :bookmark/parent (get dbids (get uids (:parent rs)))
+             :bookmark/visits (:visit rs) :bookmark/created (:rdate rs)
+             :bookmark/last-visited (:lastvisit rs)}
         tx [(if (> (:rate rs) 0) (assoc tx1 :bookmark/rating (:rate rs)) tx1)]]
     (println (str tx))
     @(transact conn tx)))

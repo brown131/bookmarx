@@ -2,10 +2,9 @@
   (:require [reagent.session :as session]
             [accountant.core :as accountant]
             [goog.window :as gwin]
+            [taoensso.timbre :as log]
             [bookmarx.env :refer [env set-active]]
             [bookmarx.header :as header]))
-
-(enable-console-print!)
 
 (defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
@@ -27,6 +26,16 @@
     [:ol.breadcrumbs
      (doall (map #(let [{:keys [db/id bookmark/name]} (session/get %)]
                    (breadcrumb id name (= % (last route)))) route))]))
+
+(defn count-links "Count the number of links in a folder and its children."
+  ([children] (count-links children 0))
+  ([children link-count]
+   (cond
+     (empty? children) link-count
+     (session/get (:db/id (first children)))
+     (count-links (rest children) 
+      (count-links (:bookmark/_parent (session/get (:db/id (first children)))) link-count))
+     :else (count-links (rest children) (inc link-count)))))
 
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
@@ -50,7 +59,7 @@
               :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
               :on-click #(session/put! :add (assoc bookmark :folder? true))}]
          [:a.bookmark {:key (str id "-name-key") :on-click #(set-active id)} name]
-         [:span.badge (count _parent)]
+         [:span.badge (count-links _parent)]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) _parent))])]))))
 

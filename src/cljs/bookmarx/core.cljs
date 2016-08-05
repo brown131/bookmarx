@@ -1,5 +1,6 @@
 (ns bookmarx.core
-  (:require [reagent.core :as reagent :refer [atom]]
+  (:require [clojure.string :as str]
+            [reagent.core :as reagent :refer [atom]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
@@ -44,7 +45,9 @@
   []
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                   {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (mapv #(sort-folder-children (apply merge %) :bookmark/name) (:body response))
+            bookmarks (mapv #(sort-folder-children (apply merge %) 
+                                                   (fn [b] (str/upper-case (:bookmark/name b)))) 
+                            (:body response))
             root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
             active (cookies/get "active" root)]
         (set-active active)

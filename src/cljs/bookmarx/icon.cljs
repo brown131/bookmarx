@@ -1,6 +1,6 @@
 (ns bookmarx.icon)
 
-(def icons {"glyphicon-asterisk",
+(def icons ["glyphicon-asterisk",
             "glyphicon-plus",
             "glyphicon-euro",
             "glyphicon-eur",
@@ -262,4 +262,4 @@
             "glyphicon-menu-left",
             "glyphicon-menu-right",
             "glyphicon-menu-down",
-            "glyphicon-menu-up"}
+            "glyphicon-menu-up"])

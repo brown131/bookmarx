@@ -48,7 +48,7 @@
   (try
     (info "get-bookmarks")
     (let [conn (d/connect (env :database-uri))
-          bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/name :bookmark/url
+          bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
                                            :bookmark/rating :bookmark/parent {:bookmark/_parent 1}])
                            :where [?e :bookmark/id]
                            [(missing? $ ?e :bookmark/url)]] (d/db conn))

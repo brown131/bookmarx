@@ -34,7 +34,7 @@
           ;; Add the bookmark to the parent's children.
           (session/put! parent-id (sort-folder-children 
                                    (update-in parent [:bookmark/_parent] 
-                                              #(conj % (-clean-doc doc))) :bookmark/name)))))
+                                              #(conj % (-clean-doc doc))) :bookmark/title)))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]
@@ -52,7 +52,7 @@
     ;; Update the parent's children with the updated child.
     (session/put! parent-id (sort-folder-children 
                              (update-in parent [:bookmark/_parent] 
-                                        #(conj % (-clean-doc doc))) :bookmark/name))
+                                        #(conj % (-clean-doc doc))) :bookmark/title))
 
     ;; Removed the bookmark from the folder that it was moved out of.
     (log/debugf "orig parent %s" (remove (fn [b] (= (:db/id b) (:db/id @doc))) 
@@ -133,7 +133,7 @@
                                (session/put! [:add] @doc))
                              (accountant/navigate! (str (:prefix env) "/select")))
                 :href (str (:prefix env) "/select")}
-   (:bookmark/name (session/get (if (:db/id (:bookmark/parent @doc))
+   (:bookmark/title (session/get (if (:db/id (:bookmark/parent @doc))
                                   (:db/id (:bookmark/parent @doc))
                                   (get-active))))])
 
@@ -148,14 +148,12 @@
   [:div
    [:div {:field :container :visible? #(and (:add? %) (not (:query? %)))}
     [row "Folder?" [:input.form-control {:field :checkbox :id :folder?}]]]
-   [row "Name" [:input.form-control {:field :text :id :bookmark/name}]]
+   [row "Title" [:input.form-control {:field :text :id :bookmark/title}]]
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [rating-stars doc]]]
    [row "Parent Folder" [folder-selector doc]]
-   [row "Icon" [:button.btn.btn-default
-                ;{:on-click #(reagent-modals/modal! [:div "some message to the user!"])} 
-                "Select"]]
+   [row "Icon" [:button.btn.btn-default "Select"]]
    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 
@@ -170,7 +168,7 @@
                  (let [parent {:db/id (if (get-active) (get-active) (session/get :root))}
                        q (:query (url (-> js/window .-location .-href)))]
                    (merge {:add? true :bookmark/parent parent :orig-parent parent}
-                          (when q {:add? true :query? true :bookmark/name (get q "name")
+                          (when q {:add? true :query? true :bookmark/title (get q "title")
                                    :bookmark/url (get q "url")}))))
                :rating 0 :rating-clicked true)))
 

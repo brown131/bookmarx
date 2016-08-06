@@ -14,18 +14,18 @@
      route)))
 
 (defn breadcrumb "Renders a breadcrumb."
-  [id name active?]
+  [id title active?]
   (if active?
-    [:li.active {:key (str id "-bc-key")} name]
+    [:li.active {:key (str id "-bc-key")} title]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(set-active id) :key (str id "-a-key")} name]]))
+     [:a {:on-click #(set-active id) :key (str id "-a-key")} title]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
   (let [route (-get-route (session/get :active))]
     [:ol.breadcrumbs
-     (doall (map #(let [{:keys [db/id bookmark/name]} (session/get %)]
-                   (breadcrumb id name (= % (last route)))) route))]))
+     (doall (map #(let [{:keys [db/id bookmark/title]} (session/get %)]
+                   (breadcrumb id title (= % (last route)))) route))]))
 
 (defn count-links "Count the number of links in a folder and its children."
   ([children] (count-links children 0))
@@ -39,13 +39,13 @@
 
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
-  (let [{:keys [db/id bookmark/name bookmark/url bookmark/rating bookmark/_parent]} bookmark]
+  (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating bookmark/_parent]} bookmark]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
                                :on-click #(session/put! :add bookmark)
                                :href (str (:prefix env) "/add")}]
-       [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} name]
+       [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
        (when rating
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
@@ -58,7 +58,7 @@
          [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
               :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
               :on-click #(session/put! :add (assoc bookmark :folder? true))}]
-         [:a.bookmark {:key (str id "-name-key") :on-click #(set-active id)} name]
+         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active id)} title]
          [:span.badge (count-links _parent)]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) _parent))])]))))

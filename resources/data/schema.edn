@@ -60,4 +60,18 @@
   :db/cardinality :db.cardinality/one
   :db/doc "Link Last Visited"
   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/icon
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Icon"
+  :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+  :db/ident :bookmark/icon-color
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "Icon Color"
+  :db.install/_attribute :db.part/db}
 ]

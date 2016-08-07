@@ -63,34 +63,39 @@
     (println (str tx))
     @(transact conn tx)))
 
-
-;;'beer.gif'
-;;'bludiamd.gif'
-;;'bluered.gif'
-;;'blusqare.gif'
-;;'con-blue.gif'
-;;'con-cyan.gif'
-;;'con-green.gif'
-;;'con-oran.gif'
-;;'con-red.gif'
-;;'de.gif'
-;;'die4.gif'
-;;'grnsqare.gif'
-;;'lock.gif'
-;;'orgstar.gif'
-;;'redball.gif'
-;;'reddiamd.gif'
-;;'sun.gif'
-;;'whtpearl.gif'
-;;'ylwsqare.gif'
+(def icon-map {"beer.gif"      ["glyphicon-glass" "Orange"]
+               "bludiamd.gif"  ["gylphicon-certificate" "Blue"]
+               "bluered.gif"   ["glyphicon-adjust" "Blue"]
+               "blusqare.gif"  ["glyphicon-stop" "Blue"]
+               "con-blue.gif"  ["glyphicon-bookmark" "Blue"]
+               "con-cyan.gif"  ["glyphicon-bookmark" "Cyan"]
+               "con-green.gif" ["glyphicon-bookmark" "Green"]
+               "con-oran.gif"  ["glyphicon-bookmark" "Orange"]
+               "con-red.gif"   ["glyphicon-bookmark" "Red"]
+               "de.gif"        ["glyphicon-flag" "Red"]
+               "die4.gif"      ["glyphicon-th-large"]
+               "grnsqare.gif"  ["glyphicon-stop" "Green"]
+               "lock.gif"      ["glyphicon-lock"]
+               "orgstar.gif"   ["glyphicon-star"]
+               "redball.gif"   ["glyphicon-record" "Red"]
+               "reddiamd.gif"  ["gylphicon-certificate" "Red"]
+               "sun.gif"       ["glyphicon-sunlight" "Yellow"]
+               "whtpearl.gif"  ["glyphicon-record-empty"]
+               "ylwsqare.gif"  ["glyphicon-stop" "Yellow"]})
 
 ;;; Import links.
-(doseq [rs (j/query db-spec ["select id, title, url, rate, parent, visit, rdate, lastvisit from bookmark where url <> ''"])]
+(doseq [rs (j/query db-spec ["select id, title, url, rate, parent, visit, rdate, lastvisit, icon from bookmark where url <> ''"])]
   (let [tx1 {:db/id #db/id[:db.part/user] :bookmark/id (squuid) :bookmark/title (:title rs)
              :bookmark/url (:url rs) :bookmark/rating (:rate rs)
              :bookmark/parent (get dbids (get uids (:parent rs)))
              :bookmark/visits (:visit rs) :bookmark/created (:rdate rs)
-             :bookmark/last-visited (:lastvisit rs)}    
-        tx [(if (> (:rate rs) 0) (assoc tx1 :bookmark/rating (:rate rs)) tx1)]]
+             :bookmark/last-visited (:lastvisit rs)}
+        tx2 (if (first (get icon-map (:icon rs)))
+              (assoc tx1 :bookmark/icon (first (get icon-map (:icon rs))))
+              tx1)
+        tx3 (if (second (get icon-map (:icon rs)))
+              (assoc tx2 :bookmark/icon-color (second (get icon-map (:icon rs))))
+              tx2)
+        tx [(if (> (:rate rs) 0) (assoc tx1 :bookmark/rating (:rate rs)) tx3)]]
     (println (str tx))
     @(transact conn tx)))

@@ -39,12 +39,18 @@
 
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
-  (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating bookmark/_parent]} bookmark]
+  (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating bookmark/_parent
+                :bookmark/icon :bookmark/icon-color]} bookmark]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
-       [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
-                               :on-click #(session/put! :add bookmark)
-                               :href (str (:prefix env) "/add")}]
+       (if icon
+         [:a {:class (str "glyphicon " icon) :aria-hidden "true"
+              :style {:color (if icon-color icon-color "Black")}
+             :key (str id "-icon-key") :on-click #(session/put! :add bookmark)
+             :href (str (:prefix env) "/add")}]
+         [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
+                                 :on-click #(session/put! :add bookmark)
+                                 :href (str (:prefix env) "/add")}])
        [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
        (when rating
          (for [i (range 0 rating)]

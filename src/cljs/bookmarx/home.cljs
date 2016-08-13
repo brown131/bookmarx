@@ -40,7 +40,7 @@
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
   (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating bookmark/_parent
-                :bookmark/icon :bookmark/icon-color]} bookmark]
+                bookmark/icon bookmark/icon-color]} bookmark]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon

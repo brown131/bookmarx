@@ -10,13 +10,14 @@
   [:span
    [:nav.header-nav
     [:div.container-fluid
-     [:span.header-navbar "Bookmarx" [:span.header-star]]
+     [:a.header-navbar {:href (str (:prefex env) "/")} "Bookmarx" [:span.header-star]]
      (when full?
       [:form.navbar-form {:role "search"}
         [:span.navbar-right
-         [:input {:type "text" :placeholder "Search"}]
-         [:button.header-button
-         [:span.glyphicon.glyphicon-search {:color "white"}]]
+         [:input {:type "text" :placeholder "Search" :key "search" :value (session/get :search) 
+                  :on-change #(session/put! :search (-> % .-target .-value))}] 
+         [:a.header-button {:href (str (:prefix env) "/search")}
+          [:span.glyphicon.glyphicon-search {:color "white"}]]
          [:span.dropdown
           [:button.header-button.dropdown-toggle {:data-toggle "dropdown"}
            [:span.glyphicon.glyphicon-menu-hamburger {:color "white"}]]

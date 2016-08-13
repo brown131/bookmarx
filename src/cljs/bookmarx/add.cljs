@@ -174,7 +174,7 @@
 
 (defn add-page "Render the Add/Edit page."
   []
-  [:div {:class "col-sm-12"}
+  [:div.col-sm-12
    [header/header]
    (let [doc (init-page-state)]
      [editor doc [bind-fields (form-template doc) doc]])])

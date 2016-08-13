@@ -5,7 +5,7 @@
 
 (defn about-page "Render the About page."
   []
-  [:div {:class "col-sm-12"}
+  [:div.col-sm-12
    [header/header]
    [:h2 "About bookmarx"]
    [:div [:a {:href (str (:prefix env) "/")} "go to the home page"]]])

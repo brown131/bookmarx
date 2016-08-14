@@ -58,11 +58,29 @@
        :headers (if (= (:csrf-token params) "true")
                   (assoc headers "csrf-token" *anti-forgery-token*)
                   headers)
-       :body (str bookmarks)})
+       :body (pr-str bookmarks)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn get-bookmark "Get a bookmark in an HTTP response."
+  [id params & [status]]
+  (try
+    (infof "get-bookmark %s %s" id params)
+    (let [conn (d/connect (env :database-uri))
+          bookmark (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
+                                           :bookmark/rating :bookmark/icon :bookmark/icon-color
+                                          :bookmark/parent {:bookmark/_parent 1}])
+                          :in $ ?uuid
+                          :where [?e :bookmark/id ?uuid]] (d/db conn)
+                         (java.util.UUID/fromString (:id params)))
+          headers {"content-type" "application/edn"}]
+      {:status (or status 200)
+       :headers (if (= (:csrf-token params) "true")
+                  (assoc headers "csrf-token" *anti-forgery-token*)
+                  headers)
+       :body (pr-str (first bookmark))})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn post-bookmark
-  "Add a bookmark into the database for an HTTP request."
+(defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [params & [status]]
   (try
     (infof "post-bookmark %s" params)
@@ -78,8 +96,7 @@
                       :bookmark/id id})})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn put-bookmark
-  "Upsert a bookmark in the database for an HTTP request."
+(defn put-bookmark "Upsert a bookmark in the database for an HTTP request."
   [id params & [status]]
   (try
     (infof "put-bookmark %s %s" id params)
@@ -88,8 +105,7 @@
       {:status (or status 200)})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn delete-bookmark
-  "Retract a bookmark in the database."
+(defn delete-bookmark "Retract a bookmark in the database."
   [id & [status]]
   (try
     (infof "delete-bookmark %s" id)
@@ -101,24 +117,23 @@
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
-           ;; Views
-           (GET "/" [] loading-page)
-           (GET "/add" [] loading-page)
-           (GET "/about" [] loading-page)
-           (GET "/cards" [] cards-page)
-           (GET "/select" [] loading-page)
-           (GET "/search" [] loading-page)
+  ;; Views
+  (GET "/" [] loading-page)
+  (GET "/add" [] loading-page)
+  (GET "/about" [] loading-page)
+  (GET "/cards" [] cards-page)
+  (GET "/select" [] loading-page)
+  (GET "/search" [] loading-page)
 
-           ;; API
-           (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
-           (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
-           (PUT "/api/bookmarks/:id" {id :id params :edn-params} [] (put-bookmark id params))
-           (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
+  ;; API
+  (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
+  (GET "/api/bookmarks/:id" {id :id params :params} [] (get-bookmark id params))
+  (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
+  (PUT "/api/bookmarks/:id" {id :id params :edn-params} [] (put-bookmark id params))
+  (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
 
-           (resources "/")
-           (not-found "Not Found"))
-
-;(def app (wrap-middleware #'routes))
+  (resources "/")
+  (not-found "Not Found"))
 
 (def app
   (-> #'routes

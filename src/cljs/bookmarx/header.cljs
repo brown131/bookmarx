@@ -10,7 +10,7 @@
   [:span
    [:nav.header-nav
     [:div.container-fluid
-     [:a.header-navbar {:href (str (:prefex env) "/")} "Bookmarx" [:span.header-star]]
+     [:a.header-navbar {:href (str (:prefix env) "/")} "Bookmarx" [:span.header-star]]
      (when full?
       [:form.navbar-form {:role "search"}
         [:span.navbar-right

@@ -24,6 +24,7 @@
                  [org.clojure/clojurescript "1.9.92" :scope "provided"]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7" :exclusions [org.clojure/tools.reader]]
+                 [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.40"]]
 
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo" :creds :gpg}}

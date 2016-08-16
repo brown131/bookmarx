@@ -3,6 +3,8 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
+            [cljs-time.core :as time]
+            [cljs-time.format :as tfrm]
             [bookmarx.env :refer [env set-active]]
             [bookmarx.header :as header]))
 
@@ -55,7 +57,11 @@
        (when rating
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
-                                             :key (str id "-rating" i "-key")}]))]
+                                             :key (str id "-rating" i "-key")}]))
+       (when (time/after? (tfrm/parse (tfrm/formatter "EEE MMM dd yyyy HH:mm:ss")
+                                      (subs (str created) 0 24))
+                          (time/minus (time/now) (time/weeks 1)))
+         [:span.label.label-default "New"])]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))

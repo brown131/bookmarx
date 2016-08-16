@@ -50,7 +50,8 @@
     (let [conn (d/connect (env :database-uri))
           bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
                                            :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                           :bookmark/parent {:bookmark/_parent 1}])
+                                           :bookmark/created :bookmark/visits :bookmark/parent 
+                                           {:bookmark/_parent 1}])
                            :where [?e :bookmark/id]
                            [(missing? $ ?e :bookmark/url)]] (d/db conn))
           headers {"content-type" "application/edn"}]
@@ -67,8 +68,9 @@
     (infof "get-bookmark %s %s" id params)
     (let [conn (d/connect (env :database-uri))
           bookmark (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
-                                           :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                          :bookmark/parent {:bookmark/_parent 1}])
+                                          :bookmark/rating :bookmark/icon :bookmark/icon-color
+                                          :bookmark/created :bookmark/visits :bookmark/parent 
+                                          {:bookmark/_parent 1}])
                           :in $ ?uuid
                           :where [?e :bookmark/id ?uuid]] (d/db conn)
                          (java.util.UUID/fromString (:id params)))

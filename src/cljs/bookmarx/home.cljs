@@ -6,9 +6,6 @@
             [bookmarx.common :refer [env set-active parse-datomic-date]]
             [bookmarx.header :as header]))
 
-;; Milliseconds in a week.
-(defonce week-time (* 1000 60 60 24 7))
-
 (defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
   ([id route]
@@ -43,7 +40,9 @@
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
   (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating bookmark/_parent
-                bookmark/icon bookmark/icon-color bookmark/created bookmark/visited]} bookmark]
+                bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
+                bookmark/visits]} bookmark
+        week-ago-ticks (- (. js/Date (now)) 604800000)]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon
@@ -59,9 +58,10 @@
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
                                              :key (str id "-rating" i "-key")}]))
-       (when (> (.getTime (parse-datomic-date created))
-                (- (. js/Date (now)) week-time))
-         [:span.label.label-default "New"])
+       (when (> (.getTime (parse-datomic-date created)) week-ago-ticks)
+         [:span.label.label-success "New"])
+       (when (and last-visited (> (.getTime (parse-datomic-date last-visited)) week-ago-ticks))
+         [:span.label.label-info "Visited"])
        ]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}

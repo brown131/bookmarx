@@ -50,7 +50,8 @@
     (let [conn (d/connect (env :database-uri))
           bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
                                            :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                           :bookmark/created :bookmark/visits :bookmark/parent 
+                                           :bookmark/created :bookmark/last-visited
+                                           :bookmark/visits :bookmark/parent 
                                            {:bookmark/_parent 1}])
                            :where [?e :bookmark/id]
                            [(missing? $ ?e :bookmark/url)]] (d/db conn))
@@ -69,7 +70,8 @@
     (let [conn (d/connect (env :database-uri))
           bookmark (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
                                           :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                          :bookmark/created :bookmark/visits :bookmark/parent 
+                                          :bookmark/created :bookmark/last-visited
+                                          :bookmark/visits :bookmark/parent 
                                           {:bookmark/_parent 1}])
                           :in $ ?uuid
                           :where [?e :bookmark/id ?uuid]] (d/db conn)
@@ -91,7 +93,8 @@
           id (d/squuid)
           now (java.util.Date.)
           bookmark (assoc params :db/id #db/id[:db.part/user] :bookmark/id id
-                          :bookmark/created now :bookmark/last-visited now)
+                          :bookmark/created now :bookmark/last-visited now
+                          :bookmark/visits 1)
           response @(d/transact conn [bookmark])]
       (infof "response %s" (str response))
       {:status (or status 200)

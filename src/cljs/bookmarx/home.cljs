@@ -58,7 +58,7 @@
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
                                              :key (str id "-rating" i "-key")}]))
-       (when (> (.getTime (parse-datomic-date created)) week-ago-ticks)
+       (when (and created  (> (.getTime (parse-datomic-date created)) week-ago-ticks))
          [:span.label.label-success "New"])
        (when (and last-visited (> (.getTime (parse-datomic-date last-visited)) week-ago-ticks))
          [:span.label.label-info "Visited"])

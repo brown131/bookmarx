@@ -7,9 +7,9 @@
             [accountant.core :as accountant]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env set-active sort-folder-children]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
+            [bookmarx.common :refer [env set-active sort-folder-children]]
             [bookmarx.home :as home]
             [bookmarx.select :as select]
             [bookmarx.search :as search])

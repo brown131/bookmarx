@@ -4,7 +4,7 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
-            [bookmarx.env :refer [env]]
+            [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
     
 (defn search-bookmarks "Search the bookmarks for the given text."

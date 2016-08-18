@@ -5,7 +5,7 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [cljs-http.client :as http]
-            [bookmarx.env :refer [env]]
+            [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
 
 (defn bookmark-tree "Render a bookmark in a tree."

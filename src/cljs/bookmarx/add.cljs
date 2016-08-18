@@ -7,7 +7,7 @@
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.env :refer [env get-active sort-folder-children]]
+            [bookmarx.common :refer [env get-active sort-folder-children]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))

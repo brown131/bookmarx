@@ -3,10 +3,11 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
-            [cljs-time.core :as time]
-            [cljs-time.format :as tfrm]
-            [bookmarx.env :refer [env set-active]]
+            [bookmarx.common :refer [env set-active parse-datomic-date]]
             [bookmarx.header :as header]))
+
+;; Milliseconds in a week.
+(defonce week-time (* 1000 60 60 24 7))
 
 (defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
@@ -58,10 +59,10 @@
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
                                              :key (str id "-rating" i "-key")}]))
-       (when (time/after? (tfrm/parse (tfrm/formatter "EEE MMM dd yyyy HH:mm:ss")
-                                      (subs (str created) 0 24))
-                          (time/minus (time/now) (time/weeks 1)))
-         [:span.label.label-default "New"])]
+       (when (> (.getTime (parse-datomic-date created))
+                (- (. js/Date (now)) week-time))
+         [:span.label.label-default "New"])
+       ]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))

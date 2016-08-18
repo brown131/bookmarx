@@ -89,7 +89,9 @@
     ; Add db/id and bookmark/id if missing.
     (let [conn (d/connect (env :database-uri))
           id (d/squuid)
-          bookmark (assoc params :db/id #db/id[:db.part/user] :bookmark/id id)
+          now (java.util.Date.)
+          bookmark (assoc params :db/id #db/id[:db.part/user] :bookmark/id id
+                          :bookmark/created now :bookmark/last-visited now)
           response @(d/transact conn [bookmark])]
       (infof "response %s" (str response))
       {:status (or status 200)

@@ -1,6 +1,6 @@
 (ns bookmarx.header
   (:require [reagent.session :as session]
-            [bookmarx.env :refer [env]]))
+            [bookmarx.common :refer [env]]))
 
 (enable-console-print!)
 

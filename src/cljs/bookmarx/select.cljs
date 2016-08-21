@@ -2,7 +2,7 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
-            [accountant.core :as accountant]
+            [taoensso.timbre :as log]
             [goog.window :as gwin]
             [cljs-http.client :as http]
             [bookmarx.common :refer [env]]
@@ -27,5 +27,3 @@
   [:div.col-sm-12
      [header/header]
      [bookmark-tree (session/get (session/get :root))]])
-
-

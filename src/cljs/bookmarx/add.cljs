@@ -95,9 +95,11 @@
   (cond (:add? @doc) (add-bookmark doc)
         (:delete? @doc) (delete-bookmark doc)
         :else (upsert-bookmark doc))
-  
-  ; Return to the home page.
-  (accountant/navigate! (str (:prefix env) "/")))
+
+  (accountant/navigate! (str (:prefix env) "/"))
+  (when (:query? @doc)
+    (.close js/window)))
+;;    (set! (.-location js/window) (str (:prefix env) "/"))))
 
 (defn rating-star "Renders a bookmark rating star."
   [index doc]
@@ -130,8 +132,7 @@
                                (swap! doc update-in [:orig-parent] (fn [] (:bookmark/parent @doc))))
                              (if (session/get :add)
                                (session/update-in! [:add :orig-parent] (fn [] (:bookmark/parent @doc)))
-                               (session/put! [:add] @doc))
-                             (accountant/navigate! (str (:prefix env) "/select")))
+                               (session/put! :add @doc)))
                 :href (str (:prefix env) "/select")}
    (:bookmark/title (session/get (if (:db/id (:bookmark/parent @doc))
                                   (:db/id (:bookmark/parent @doc))

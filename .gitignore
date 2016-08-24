@@ -1,13 +1,9 @@
-target
-!resources
-resources/*
-!resources/public
-resources/public/js/*
-!resources/public/js/bootstrap-submenu
-resources/public/css/bootstrap
-.lein-*
-.idea
-lib
+/target
+/resources/public/css
+/resources/public/js
+/.lein-*
+/.idea
+/lib
 *.log
 *.pid
 *.iml
@@ -17,4 +13,4 @@ nohup.out
 profiles.clj
 config.edn
 .nrepl-port
-.AppleDouble
+/.AppleDouble

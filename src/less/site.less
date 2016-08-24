@@ -1,7 +1,6 @@
 @import (reference) "bootstrap/bootstrap.less";
 
-.header-navbar {
-  .navbar-header;
+.header-navbar:extend(.navbar-header) {
   display: inline-block;
   margin-top: 10px;
   margin-bottom: 10px;
@@ -14,17 +13,13 @@
   }
 }
 
-.header-star {
-  .glyphicon;
-  .glyphicon-star-empty;
+.header-star:extend(.glyphicon, .glyphicon-star-empty)  {
   font-size: 30pt;
   padding-left: 10px;
   padding-right: 20px;
 }
 
-.header-button {
-  .btn;
-  .btn-default;
+.header-button:extend(.btn, .btn-default) {
   color: white;
   background-color: black;
   border-color: black;
@@ -44,16 +39,12 @@
   }
 }
 
-.header-nav {
-  .nav;
-  .navbar-inverse;
-  .navbar-fixed-top;
+.header-nav:extend(.nav, .navbar-inverse, .navbar-fixed-top) {
   background-color: black;
   font-weight: bold;
 }
 
-.breadcrumbs {
-  .breadcrumb;
+.breadcrumbs:extend(.breadcrumb) {
   background-color: whitesmoke;
   a {
     color:red;
@@ -75,41 +66,28 @@
   }
 }
 
-.bookmark {
-  .bookmark-link;
+.bookmark:extend(.bookmark-link) {
   margin-right: 6px;
 }
 
-.bookmark_link-icon {
-  .glyphicon;
-  .glyphicon-link;
-  .bookmark-link;
+.bookmark_link-icon:extend(.glyphicon, .glyphicon-link, .bookmark-link) {
   width: 15px;
 }
 
-.bookmark_link-icon-rating {
-  .glyphicon;
-  .glyphicon-star;
+.bookmark_link-icon-rating:extend(.glyphicon, .glyphicon-star) {
   width: 15px;
 }
 
-.bookmark_folder-icon-close {
-  .glyphicon;
-  .glyphicon-folder-close;
-  .bookmark-link;
+.bookmark_folder-icon-close:extend(.glyphicon, .glyphicon-folder-close, .bookmark-link) {
   width: 19px;
 }
 
-.bookmark_folder-icon-open {
-  .glyphicon;
-  .glyphicon-folder-open;
-  .bookmark-link;
+.bookmark_folder-icon-open:extend(.glyphicon, .glyphicon-folder-open, .bookmark-link) {
   width: 19px;
 }
 
 // Style for the children nodes container.
-.bookmark_children {
-  .bookmark;
+.bookmark_children:extend(.bookmark)  {
   margin-left: 16px;
 }
 
@@ -131,8 +109,7 @@
 }
 
 // Rotate the triangle to close it.
-.bookmark_arrow-collapsed {
-  .bookmark_arrow;
+.bookmark_arrow-collapsed:extend(.bookmark_arrow) {
   -webkit-transform: rotate(-90deg);
   -moz-transform: rotate(-90deg);
   -ms-transform: rotate(-90deg);

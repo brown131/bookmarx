@@ -98,8 +98,8 @@
 
   (accountant/navigate! (str (:prefix env) "/"))
   (when (:query? @doc)
-    (.close js/window)))
-;;    (set! (.-location js/window) (str (:prefix env) "/"))))
+    (.setTimeout js/window #(.close js/window) 1000)))
+
 
 (defn rating-star "Renders a bookmark rating star."
   [index doc]

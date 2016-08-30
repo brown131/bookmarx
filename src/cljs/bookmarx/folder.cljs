@@ -1,4 +1,4 @@
-(ns bookmarx.select
+(ns bookmarx.folder
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
@@ -22,7 +22,7 @@
        [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
         (doall (map #(bookmark-tree %) _parent))]])))
 
-(defn select-page "Select a parent folder for a bookmark."
+(defn folder-page "Select a parent folder for a bookmark."
   []
   [:div.col-sm-12
      [header/header]

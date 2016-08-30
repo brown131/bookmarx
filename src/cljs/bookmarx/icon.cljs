@@ -1,4 +1,12 @@
-(ns bookmarx.icon)
+(ns bookmarx.icon
+   (:require [reagent.core :as reagent :refer [atom]]
+             [reagent.session :as session]
+             ;[secretary.core :as secretary :include-macros true]
+             [taoensso.timbre :as log]
+             ;[goog.window :as gwin]
+             ;[cljs-http.client :as http]
+             ;[bookmarx.common :refer [env]]
+             [bookmarx.header :as header]))
 
 (def icons ["glyphicon-asterisk",
             "glyphicon-plus",
@@ -263,3 +271,22 @@
             "glyphicon-menu-right",
             "glyphicon-menu-down",
             "glyphicon-menu-up"])
+
+#_(defn icon-table "Render a table of icons"
+  [icons]
+  (log/debug "testing")
+  [:table.table
+   (loop [icons icons acc [:tbody]]
+     (if (nil? icons)
+       (do (log/debugf "acc %s" acc) acc)
+       (recur (drop 10 icons)
+              (conj acc [:tr (map #(vector :td [:a {:class (str "glyphicon " %) :href "#"}])
+                                  (take 10 icons))]))))])
+  
+(defn icon-page "Select an icon for a bookmark."
+  []
+  [:div.col-sm-6
+   [header/header]
+  ;; [icon-table icons]
+   ])
+

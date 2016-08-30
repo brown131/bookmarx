@@ -129,7 +129,8 @@
   (GET "/add" [] loading-page)
   (GET "/about" [] loading-page)
   (GET "/cards" [] cards-page)
-  (GET "/select" [] loading-page)
+  (GET "/folder" [] loading-page)
+  (GET "/icon" [] loading-page)
   (GET "/search" [] loading-page)
 
   ;; API

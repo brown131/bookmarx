@@ -61,8 +61,7 @@
        (when (and created  (> (.getTime (parse-datomic-date created)) week-ago-ticks))
          [:span.label.label-success "New"])
        (when (and last-visited (> (.getTime (parse-datomic-date last-visited)) week-ago-ticks))
-         [:span.label.label-info "Visited"])
-       ]
+         [:span.label.label-info "Visited"])]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))

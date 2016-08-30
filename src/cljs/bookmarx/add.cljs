@@ -139,8 +139,12 @@
                              (if (session/get :add)
                                (session/update-in! [:add :orig-parent] (fn [] (:bookmark/parent @doc)))
                                (session/put! :add @doc)))
-                :href (str (:prefix env) "/select")}
+                :href (str (:prefix env) "/folder")}
    (:bookmark/title (session/get (-get-active doc)))])
+
+(defn icon-selector "Render icon selection."
+  [doc]
+  [:a.bookmark {:href (str (:prefix env) "/icon")} "Select"])
 
 (defn row
   [label input]
@@ -158,7 +162,7 @@
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
     [row "Rating" [rating-stars doc]]]
    [row "Parent Folder" [folder-selector doc]]
-   [row "Icon" [:button.btn.btn-default "Select"]]
+   [row "Icon" [icon-selector doc]]
    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 

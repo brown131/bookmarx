@@ -11,7 +11,8 @@
             [bookmarx.add :as add]
             [bookmarx.common :refer [env set-active sort-folder-children]]
             [bookmarx.home :as home]
-            [bookmarx.select :as select]
+            [bookmarx.folder :as folder]
+            [bookmarx.icon :as icon]
             [bookmarx.search :as search])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -27,8 +28,11 @@
 (secretary/defroute (str (:prefix env) "/add") []
                     (session/put! :current-page #'add/add-page))
 
-(secretary/defroute (str (:prefix env) "/select") []
-                    (session/put! :current-page #'select/select-page))
+(secretary/defroute (str (:prefix env) "/folder") []
+                    (session/put! :current-page #'folder/folder-page))
+
+(secretary/defroute (str (:prefix env) "/icon") []
+                    (session/put! :current-page #'icon/icon-page))
 
 (secretary/defroute (str (:prefix env) "/search") []
                     (session/put! :current-page #'search/search-page))

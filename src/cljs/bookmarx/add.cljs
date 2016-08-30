@@ -16,6 +16,13 @@
   [doc]
   (dissoc @doc :bookmark/_parent :orig-parent :folder? :add? :delete? :query? :rating :rating-clicked))
 
+(defn -get-active "Get the active bookmark id."
+  [doc]
+  (if (:db/id (:bookmark/parent @doc))
+    (:db/id (:bookmark/parent @doc))
+    (get-active)))
+
+(session/get :active)
 (defn add-bookmark "Add a new bookmark."
   [doc]
   ;; Update the state in the remote repository.
@@ -77,7 +84,7 @@
   (when (:folder? @doc) (session/remove! (:db/id @doc)))
                   
   ;; Remove the bookmark from the parent's children.
-  (let [parent-id (get-active)
+  (let [parent-id (-get-active doc)
         parent (session/get parent-id)
         children (:bookmark/_parent parent)]
     (session/put! parent-id
@@ -99,7 +106,6 @@
   (accountant/navigate! (str (:prefix env) "/"))
   (when (:query? @doc)
     (.setTimeout js/window #(.close js/window) 1000)))
-
 
 (defn rating-star "Renders a bookmark rating star."
   [index doc]
@@ -134,9 +140,7 @@
                                (session/update-in! [:add :orig-parent] (fn [] (:bookmark/parent @doc)))
                                (session/put! :add @doc)))
                 :href (str (:prefix env) "/select")}
-   (:bookmark/title (session/get (if (:db/id (:bookmark/parent @doc))
-                                  (:db/id (:bookmark/parent @doc))
-                                  (get-active))))])
+   (:bookmark/title (session/get (-get-active doc)))])
 
 (defn row
   [label input]
@@ -166,7 +170,7 @@
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)
-                 (let [parent {:db/id (if (get-active) (get-active) (session/get :root))}
+                 (let [parent {:db/id (get-active)}
                        q (:query (url (-> js/window .-location .-href)))]
                    (merge {:add? true :bookmark/parent parent :orig-parent parent}
                           (when q {:add? true :query? true :bookmark/title (get q "title")

@@ -13,7 +13,9 @@
 
 (defn get-active "Get the active folder from the cookie or else the session."
   []
-  (cookies/get "active" (session/get :active)))
+  (if (session/get :active)
+    (session/get :active)
+    (cookies/get "active" (session/get :root))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort key."
   [folder sort-key]

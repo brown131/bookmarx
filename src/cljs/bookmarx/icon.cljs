@@ -1,11 +1,8 @@
 (ns bookmarx.icon
    (:require [reagent.core :as reagent :refer [atom]]
              [reagent.session :as session]
-             ;[secretary.core :as secretary :include-macros true]
              [taoensso.timbre :as log]
-             ;[goog.window :as gwin]
-             ;[cljs-http.client :as http]
-             ;[bookmarx.common :refer [env]]
+             [bookmarx.common :refer [env]]
              [bookmarx.header :as header]))
 
 (def icons ["glyphicon-asterisk",
@@ -203,15 +200,15 @@
             ;;"glyphicon-sound-5-1",
             ;;"glyphicon-sound-6-1",
             ;;"glyphicon-sound-7-1",
-            "glyphicon-copyright-mark",
-            "glyphicon-registration-mark",
+            ;;"glyphicon-copyright-mark",
+            ;;"glyphicon-registration-mark",
             "glyphicon-cloud-download",
             "glyphicon-cloud-upload",
             "glyphicon-tree-conifer",
             "glyphicon-tree-deciduous",
             "glyphicon-cd",
-            "glyphicon-save-file",
-            "glyphicon-open-file",
+            ;;"glyphicon-save-file",
+            ;;"glyphicon-open-file",
             ;;"glyphicon-level-up",
             ;;"glyphicon-copy",
             ;;"glyphicon-paste",
@@ -267,26 +264,191 @@
             "glyphicon-console",
             ;;"glyphicon-superscript",
             ;;"glyphicon-subscript",
-            "glyphicon-menu-left",
-            "glyphicon-menu-right",
-            "glyphicon-menu-down",
-            "glyphicon-menu-up"])
+            ;;"glyphicon-menu-left",
+            ;;"glyphicon-menu-right",
+            ;;"glyphicon-menu-down",
+            ;;"glyphicon-menu-up"
+            ])
 
-#_(defn icon-table "Render a table of icons"
+(def colors ["AliceBlue",
+             "AntiqueWhite",
+             "Aqua",
+             "Aquamarine",
+             "Azure",
+             "Beige",
+             "Bisque",
+             "Black",
+             "BlanchedAlmond",
+             "Blue",
+             "BlueViolet",
+             "Brown",
+             "BurlyWood",
+             "CadetBlue",
+             "Chartreuse",
+             "Chocolate",
+             "Coral",
+             "CornflowerBlue",
+             "Cornsilk",
+             "Crimson",
+             "Cyan",
+             "DarkBlue",
+             "DarkCyan",
+             "DarkGoldenRod",
+             "DarkGray",
+             ;;"DarkGrey",
+             "DarkGreen",
+             "DarkKhaki",
+             "DarkMagenta",
+             "DarkOliveGreen",
+             "DarkOrange",
+             "DarkOrchid",
+             "DarkRed",
+             "DarkSalmon",
+             "DarkSeaGreen",
+             "DarkSlateBlue",
+             "DarkSlateGray",
+             ;;"DarkSlateGrey",
+             "DarkTurquoise",
+             "DarkViolet",
+             "DeepPink",
+             "DeepSkyBlue",
+             "DimGray",
+             ;;"DimGrey",
+             "DodgerBlue",
+             "FireBrick",
+             "FloralWhite",
+             "ForestGreen",
+             "Fuchsia",
+             "Gainsboro",
+             "GhostWhite",
+             "Gold",
+             "GoldenRod",
+             "Gray",
+             ;;"Grey",
+             "Green",
+             "GreenYellow",
+             "HoneyDew",
+             "HotPink",
+             "IndianRed",
+             "Indigo",
+             "Ivory",
+             "Khaki",
+             "Lavender",
+             "LavenderBlush",
+             "LawnGreen",
+             "LemonChiffon",
+             "LightBlue",
+             "LightCoral",
+             "LightCyan",
+             "LightGoldenRodYellow",
+             "LightGray",
+             ;;"LightGrey",
+             "LightGreen",
+             "LightPink",
+             "LightSalmon",
+             "LightSeaGreen",
+             "LightSkyBlue",
+             "LightSlateGray",
+             ;;"LightSlateGrey",
+             "LightSteelBlue",
+             "LightYellow",
+             "Lime",
+             "LimeGreen",
+             "Linen",
+             "Magenta",
+             "Maroon",
+             "MediumAquaMarine",
+             "MediumBlue",
+             "MediumOrchid",
+             "MediumPurple",
+             "MediumSeaGreen",
+             "MediumSlateBlue",
+             "MediumSpringGreen",
+             "MediumTurquoise",
+             "MediumVioletRed",
+             "MidnightBlue",
+             "MintCream",
+             "MistyRose",
+             "Moccasin",
+             "NavajoWhite",
+             "Navy",
+             "OldLace",
+             "Olive",
+             "OliveDrab",
+             "Orange",
+             "OrangeRed",
+             "Orchid",
+             "PaleGoldenRod",
+             "PaleGreen",
+             "PaleTurquoise",
+             "PaleVioletRed",
+             "PapayaWhip",
+             "PeachPuff",
+             "Peru",
+             "Pink",
+             "Plum",
+             "PowderBlue",
+             "Purple",
+             "RebeccaPurple",
+             "Red",
+             "RosyBrown",
+             "RoyalBlue",
+             "SaddleBrown",
+             "Salmon",
+             "SandyBrown",
+             "SeaGreen",
+             "SeaShell",
+             "Sienna",
+             "Silver",
+             "SkyBlue",
+             "SlateBlue",
+             "SlateGray",
+             ;;"SlateGrey",
+             "Snow",
+             "SpringGreen",
+             "SteelBlue",
+             "Tan",
+             "Teal",
+             "Thistle",
+             "Tomato",
+             "Turquoise",
+             "Violet",
+             "Wheat",
+             "White",
+             "WhiteSmoke",
+             "Yellow",
+             "YellowGreen"
+             ])
+
+(defn icon-cell "Render an icon."
+  [icon]
+  [:td [:a {:class (str "glyphicon " icon 
+                        (when-not (= icon (session/get-in [:add :bookmark/icon])) 
+                          " bookmark_link-icon"))
+            :style {:color (session/get-in [:add :bookmark/icon-color])}
+            :on-click #(session/update-in! [:add :bookmark/icon] (fn [_] icon))
+            :key (str "a-" icon) :href (str (:prefix env) "/add") :aria-hidden true}]])
+
+(defn icon-table "Render a table of icons"
   [icons]
-  (log/debug "testing")
   [:table.table
    (loop [icons icons acc [:tbody]]
-     (if (nil? icons)
-       (do (log/debugf "acc %s" acc) acc)
-       (recur (drop 10 icons)
-              (conj acc [:tr (map #(vector :td [:a {:class (str "glyphicon " %) :href "#"}])
-                                  (take 10 icons))]))))])
-  
+     (if (empty? icons) acc
+         (recur (drop 23 icons) (conj acc [:tr (map icon-cell (take 23 icons))]))))])
+
+(defn color-option "Render a color option."
+  [color]
+  [:option {:value color :style {:color color} :key (str "option-" color "-key")
+            :on-click #(session/update-in! [:add :bookmark/icon-color] (fn [_] color))} color])
+
+(defn color-select "Render a color dropdown."
+  [colors]
+  [:select (map color-option colors)])
+
 (defn icon-page "Select an icon for a bookmark."
   []
   [:div.col-sm-6
    [header/header]
-  ;; [icon-table icons]
-   ])
-
+   [icon-table icons]
+   [color-select colors]
+   [:div [:a {:href (str (:prefix env) "/add")} "Cancel"]]])

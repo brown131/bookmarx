@@ -144,7 +144,10 @@
 
 (defn icon-selector "Render icon selection."
   [doc]
-  [:a.bookmark {:href (str (:prefix env) "/icon")} "Select"])
+  (let [{:keys [:bookmark/icon :bookmark/icon-color]} @doc] 
+    [:a {:class (str "bookmark_link-icon glyphicon " icon) 
+         :style {:color (if icon-color icon-color "Black")}
+         :href (str (:prefix env) "/icon")}]))
 
 (defn row
   [label input]

@@ -7114,7 +7114,7 @@ fieldset[disabled] .header-nav .btn-link:focus {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: black;
-  width: 15px;
+  width: 19px;
 }
 .bookmark_link-icon:before {
   content: "\e144";
@@ -7217,6 +7217,36 @@ fieldset[disabled] .header-nav .btn-link:focus {
 }
 .bookmark.a {
   color: black;
+}
+.bookmark-new {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: green;
+}
+.bookmark-new:before {
+  content: "\e216";
+}
+.bookmark-visited {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: blue;
+}
+.bookmark-visited:before {
+  content: "\e108";
 }
 @media (max-width: 767px) {
   body {

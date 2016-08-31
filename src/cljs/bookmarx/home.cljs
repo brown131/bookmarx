@@ -47,7 +47,7 @@
       [:div.bookmark_children {:key (str id "-key")}
        (if icon
          [:a {:class (str "glyphicon " icon) :aria-hidden "true"
-              :style {:color (if icon-color icon-color "Black")}
+              :style {:color (if icon-color icon-color "Black") :width "19px"}
              :key (str id "-icon-key") :on-click #(session/put! :add bookmark)
              :href (str (:prefix env) "/add")}]
          [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
@@ -58,10 +58,10 @@
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true"
                                              :key (str id "-rating" i "-key")}]))
-       (when (and created  (> (.getTime (parse-datomic-date created)) week-ago-ticks))
-         [:span.glyphicon.glyphicon-baby-formula {:style {:color "Green"}}])
+       (when (and created (> (.getTime (parse-datomic-date created)) week-ago-ticks))
+         [:span.bookmark-new])
        (when (and last-visited (> (.getTime (parse-datomic-date last-visited)) week-ago-ticks))
-         [:span.glyphicon.glyphicon-plane {:style {:color "Blue"}}])]
+         [:span.bookmark-visited])]
       (let [{:keys [bookmark/_parent open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))

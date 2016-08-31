@@ -163,9 +163,9 @@
    [row "Title" [:input.form-control {:field :text :id :bookmark/title}]]
    [:div {:field :container :visible? #(not (:folder? %))}
     [row "URL" [:input.form-control {:field :text :id :bookmark/url}]]
-    [row "Rating" [rating-stars doc]]]
+    [row "Rating" [rating-stars doc]]
+    [row "Icon" [icon-selector doc]]]
    [row "Parent Folder" [folder-selector doc]]
-   [row "Icon" [icon-selector doc]]
    [:div {:field :container :visible? #(not (:add? %))}
     [row "Delete?" [:input.form-control {:field :checkbox :id :delete?}]]]])
 

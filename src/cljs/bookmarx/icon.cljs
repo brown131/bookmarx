@@ -425,7 +425,6 @@
   [:td [:a {:class (str "glyphicon " icon 
                         (when-not (= icon (session/get-in [:add :bookmark/icon])) 
                           " bookmark_link-icon"))
-            :style {:color (session/get-in [:add :bookmark/icon-color])}
             :on-click #(session/update-in! [:add :bookmark/icon] (fn [_] icon))
             :key (str "a-" icon) :href (str (:prefix env) "/add") :aria-hidden true}]])
 
@@ -434,16 +433,21 @@
   [:table.table
    (loop [icons icons acc [:tbody]]
      (if (empty? icons) acc
-         (recur (drop 23 icons) (conj acc [:tr (map icon-cell (take 23 icons))]))))])
+         (recur (drop 20 icons) (conj acc [:tr (map icon-cell (take 20 icons))]))))])
 
 (defn color-option "Render a color option."
   [color]
-  [:option {:value color :style {:color color} :key (str "option-" color "-key")
-            :on-click #(session/update-in! [:add :bookmark/icon-color] (fn [_] color))} color])
+  [:option (merge {:value color :style {:color color} :key (str "option-" color "-key")}
+            (when (= color (session/get-in [:add :bookmark/icon-color])) {:selected "selected"}))
+   color])
 
 (defn color-select "Render a color dropdown."
   [colors]
-  [:select (map color-option colors)])
+  [:select {:id "color-select"
+            :on-change #(let [this (.getElementById js/document "color-select")
+                              new-color (nth colors (.-selectedIndex this))]
+                          (session/update-in! [:add :bookmark/icon-color] (fn [_] new-color)))} 
+   (map color-option colors)])
 
 (defn icon-page "Select an icon for a bookmark."
   []

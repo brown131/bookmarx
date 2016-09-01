@@ -437,17 +437,22 @@
 
 (defn color-option "Render a color option."
   [color]
-  [:option (merge {:value color :style {:color color} :key (str "option-" color "-key")}
-            (when (= color (session/get-in [:add :bookmark/icon-color])) {:selected "selected"}))
-   color])
+  (let [current-color (session/get-in [:add :bookmark/icon-color])]
+    [:option (merge {:value color :key (str "option-" color "-key")}
+                    (when (= color (if current-color current-color "Black")) {:selected "selected"}))
+     color]))
 
 (defn color-select "Render a color dropdown."
   [colors]
-  [:select {:id "color-select"
-            :on-change #(let [this (.getElementById js/document "color-select")
-                              new-color (nth colors (.-selectedIndex this))]
+  [:div
+   [:select {:id "color-select"
+             :on-change #(let [this (.getElementById js/document "color-select")
+                               new-color (nth colors (.-selectedIndex this))]
                           (session/update-in! [:add :bookmark/icon-color] (fn [_] new-color)))} 
-   (map color-option colors)])
+    (map color-option colors)]
+   " "
+   [:div.glyphicon.glyphicon-stop {:style {:color (session/get-in [:add :bookmark/icon-color])
+                                           :font-size "18px"}}]])
 
 (defn icon-page "Select an icon for a bookmark."
   []

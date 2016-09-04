@@ -47,7 +47,9 @@
   [doc]
   (let [parent-id (get-in @doc [:bookmark/parent :db/id])
         parent (session/get parent-id)
-        orig-parent-id (get-in @doc [:orig-parent :db/id])
+        orig-parent-id (if (get @doc :orig-parent)
+                         (get-in @doc [:orig-parent :db/id])
+                         parent-id)
         orig-parent (session/get orig-parent-id)
         children (:bookmark/_parent parent)]
     ;; Replace the children of the folder with the children from the session folder.
@@ -56,19 +58,16 @@
                     (assoc (-clean-doc doc) :bookmark/_parent
                            (:bookmark/_parent (session/get (:db/id @doc))))))
 
-    ;; Update the parent's children with the updated child.
-    (session/put! parent-id (sort-folder-children 
-                             (update-in parent [:bookmark/_parent] 
-                                        #(conj % (-clean-doc doc))) :bookmark/title))
+    ;; Remove the bookmark from the original/parent folder.
+    (session/put! orig-parent-id 
+                  (update-in orig-parent [:bookmark/_parent]
+                             #(remove (fn [b] (= (:db/id b) (:db/id @doc))) 
+                                      (:bookmark/_parent orig-parent))))
 
-    ;; Removed the bookmark from the folder that it was moved out of.
-    (log/debugf "orig parent %s" (remove (fn [b] (= (:db/id b) (:db/id @doc))) 
-                                         (:bookmark/_parent orig-parent)))
-    (when (and orig-parent-id (not= parent-id orig-parent-id))
-      (session/put! orig-parent-id 
-                    (update-in orig-parent [:bookmark/_parent]
-                               #(remove (fn [b] (= (:db/id b) (:db/id @doc))) 
-                                        (:bookmark/_parent orig-parent))))))
+    ;; Add the updated child to the parent folder.
+    (session/put! parent-id (sort-folder-children 
+                             (update-in (session/get parent-id) [:bookmark/_parent] 
+                                        #(conj % (-clean-doc doc))) :bookmark/title)))
 
   ;; Update the state in the remote repository.
   (go (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))

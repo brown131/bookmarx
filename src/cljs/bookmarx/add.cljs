@@ -58,7 +58,7 @@
                     (assoc (-clean-doc doc) :bookmark/_parent
                            (:bookmark/_parent (session/get (:db/id @doc))))))
 
-    ;; Remove the bookmark from the original/parent folder.
+    ;; Remove the bookmark from the original parent folder.
     (session/put! orig-parent-id 
                   (update-in orig-parent [:bookmark/_parent]
                              #(remove (fn [b] (= (:db/id b) (:db/id @doc))) 
@@ -74,7 +74,7 @@
                     {:edn-params (-clean-doc doc)
                      :with-credentials? false
                      :headers {"x-csrf-token" (session/get :csrf-token)}}))))
-  
+
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
   (log/debugf "delete")
@@ -94,13 +94,21 @@
                        {:edn-params (-clean-doc doc)
                         :with-credentials? false
                         :headers {"x-csrf-token" (session/get :csrf-token)}}))))
-      
+
+(defn trash-bookmark "Move a bookmark to the trash folder."
+  [doc]
+  (swap! doc update-in [:orig-parent] #(get @doc :bookmark/parent))
+  (swap! doc update-in [:bookmark/parent :db/id] #(session/get :trash))
+  (upsert-bookmark doc))
+  
 (defn save-bookmark "Save a bookmark."
   [doc]
   (log/debugf "save %s" @doc)
   (cond (:add? @doc) (add-bookmark doc)
-        (:delete? @doc) (delete-bookmark doc)
-        :else (upsert-bookmark doc))
+        (:delete? @doc) (if (:folder? @doc)
+                          (delete-bookmark doc)
+                          (trash-bookmark doc))
+         :else (upsert-bookmark doc))
 
   (accountant/navigate! (str (:prefix env) "/"))
   (when (:query? @doc)

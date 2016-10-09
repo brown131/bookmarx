@@ -50,12 +50,15 @@
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                   {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (mapv #(sort-folder-children (apply merge %) 
-                                                   (fn [b] (str/upper-case (:bookmark/title b)))) 
+                                                   (fn [b] (str/upper-case
+                                                            (or (:bookmark/title b) "")))) 
                             (:body response))
             root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
+            trash (:db/id (first (filter #(= "~Trash" (:bookmark/title %)) bookmarks)))
             active (cookies/get "active" root)]
         (set-active active)
         (session/put! :root root)
+        (session/put! :trash trash)
         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
         (doall (map #(session/put! (:db/id %) %) bookmarks))))
   (secretary/set-config! :prefix "/bookmark")

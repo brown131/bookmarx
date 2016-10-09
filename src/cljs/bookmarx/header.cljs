@@ -26,4 +26,6 @@
            [:li [:a {:href (str (:prefix env) "/add") 
                      :on-click #(session/remove! :add)} "Add Bookmark..."]]
            [:li [:a {:href "#"} "Show"]]
-           [:li [:a {:href "#"} "Sort"]]]]]])]]]))
+           [:li [:a {:href "#"} "Sort"]]
+           [:li [:a {:href "#"} "Empty trash"]]]]]])]]]))
+

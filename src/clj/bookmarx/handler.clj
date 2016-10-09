@@ -29,8 +29,8 @@
      [:div#app]
      [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
      (include-js "js/app.js")
-     (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
-     (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
+     (include-js "https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
+     (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (def cards-page
   (html5
@@ -39,11 +39,11 @@
      [:div#app]
      [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
      (include-js "js/app_devcards.js")
-     (include-js "//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
-     (include-js "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
+     (include-js "https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js")
+     (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js")]))
 
 (defn get-bookmarks
-  "Get all bookmark folders and their children and returns them in an HTTP response."
+  "Get all bookmark folders and their children and return them in an HTTP response."
   [params & [status]]
   (try
     (info "get-bookmarks")
@@ -120,6 +120,10 @@
           e (d/q '[:find ?e :in $ ?uuid :where [?e :bookmark/id ?uuid]] (d/db conn)
                         (java.util.UUID/fromString id))
           response @(d/transact conn `[[:db.fn/retractEntity ~(first (first e))]])]
+
+      ;; TODO: If the bookmark is a folder, recursively delete its children,
+      ;; moving links to the trash folder.
+      
       {:status (or status 200)})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 

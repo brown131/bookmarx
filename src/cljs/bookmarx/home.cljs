@@ -16,9 +16,10 @@
 (defn breadcrumb "Renders a breadcrumb."
   [id title active?]
   (if active?
-    [:li.active {:key (str id "-bc-key")} title]
+    [:li.active {:key (str id "-bc-key")} (if (= title "~Trash") "Trash" title)]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(set-active id) :key (str id "-a-key")} title]]))
+     [:a {:on-click #(set-active id) :key (str id "-a-key")}
+      (if (= title "~Trash") "Trash" title)]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
@@ -67,10 +68,14 @@
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                  :key (str id "-arrow-key")
                  :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
-         [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
-              :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
-              :on-click #(session/put! :add (assoc bookmark :folder? true))}]
-         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active id)} title]
+         (if (= title "~Trash")
+           [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
+                   :aria-hidden "true" :style {:width "19px"}}]
+           [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
+                :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
+                :on-click #(session/put! :add (assoc bookmark :folder? true))}])
+         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active id)}
+          (if (= title "~Trash") "Trash" title)]
          [:span.badge (count-links _parent)]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) _parent))])]))))

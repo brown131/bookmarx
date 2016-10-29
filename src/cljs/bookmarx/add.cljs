@@ -105,7 +105,8 @@
   [doc]
   (log/debugf "save %s" @doc)
   (cond (:add? @doc) (add-bookmark doc)
-        (:delete? @doc) (if (:folder? @doc)
+        (:delete? @doc) (if (or (:folder? @doc)
+                                (= (get-in @doc[:bookmark/parent :db/id]) (session/get :trash)))
                           (delete-bookmark doc)
                           (trash-bookmark doc))
          :else (upsert-bookmark doc))
@@ -116,9 +117,7 @@
 
 (defn rating-star "Renders a bookmark rating star."
   [index doc]
-  [:span {:class (if (<= index (if (get-in @doc [:rating-clicked])
-                                 (get-in @doc [:bookmark/rating])
-                                 (get-in @doc [:rating])))
+  [:span {:class (if (<= index (if (:rating-clicked @doc) (:bookmark/rating @doc) (:rating @doc)))
                    "glyphicon glyphicon-star"
                    "glyphicon glyphicon-star-empty")
           :key (str "rating-star-" index) :data-index index
@@ -147,7 +146,8 @@
                                (session/update-in! [:add :orig-parent] (fn [] (:bookmark/parent @doc)))
                                (session/put! :add @doc)))
                 :href (str (:prefix env) "/folder")}
-   (:bookmark/title (session/get (-get-active doc)))])
+   (let [title (:bookmark/title (session/get (-get-active doc)))]
+     (if (= title "~Trash") "Trash" title))])
 
 (defn icon-selector "Render icon selection."
   [doc]

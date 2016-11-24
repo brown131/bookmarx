@@ -45,13 +45,13 @@
   []
   (reagent/render [:div [current-page]] (.getElementById js/document "app")))
 
-(defn init! "Load the bookmarks from the server and set the state for the application."
+(defn get-bookmarks "Load bookmarks from the server."
   []
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                  {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (mapv #(sort-folder-children (apply merge %) 
+                                   {:query-params {:csrf-token true} :with-credentials? false}))
+            bookmarks (mapv #(sort-folder-children (apply merge %)
                                                    (fn [b] (str/upper-case
-                                                            (or (:bookmark/title b) "")))) 
+                                                             (or (:bookmark/title b) ""))))
                             (:body response))
             root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
             trash (:db/id (first (filter #(= "~Trash" (:bookmark/title %)) bookmarks)))
@@ -60,7 +60,11 @@
         (session/put! :root root)
         (session/put! :trash trash)
         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
-        (doall (map #(session/put! (:db/id %) %) bookmarks))))
+        (doall (map #(session/put! (:db/id %) %) bookmarks)))))
+
+(defn init! "Set the state for the application."
+  []
+  (get-bookmarks)
   (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!
    {:nav-handler (fn [path] (secretary/dispatch! path))

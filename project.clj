@@ -24,7 +24,8 @@
                  [org.clojure/clojurescript "1.9.92" :scope "provided"]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7" :exclusions [org.clojure/tools.reader]]
-                 [cljs-http "0.1.40"]]
+                 [cljs-http "0.1.40"]
+                 [figwheel-sidecar "0.5.0"]]
 
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo" :creds :gpg}}
 
@@ -95,15 +96,15 @@
                    :dependencies [[ring/ring-mock "0.3.0"]
                                   [ring/ring-devel "1.5.0"]
                                   [prone "1.1.1"]
-                                  [figwheel-sidecar "0.5.4-4"]
+                                  [figwheel-sidecar "0.5.8"]
                                   [org.clojure/tools.nrepl "0.2.12"]
-                                  [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
+                                  [com.cemerick/piggieback "0.2.1"]
                                   [devcards "0.2.1-7" :exclusions [org.clojure/tools.reader]]
                                   [pjstadig/humane-test-output "0.8.0"]]
 
                    :source-paths ["env/dev/clj"]
                    :resource-paths ["env/dev/resources"]
-                   :plugins [[lein-figwheel "0.5.4-4"]
+                   :plugins [[lein-figwheel "0.5.8"]
                              [lein-less "1.7.5"]]
 
                    :injections [(require 'pjstadig.humane-test-output)

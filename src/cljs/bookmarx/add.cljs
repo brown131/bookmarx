@@ -1,5 +1,6 @@
 (ns bookmarx.add
-  (:require [reagent.core :refer [atom]]
+  (:require [clojure.string :as str]
+            [reagent.core :refer [atom]]
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
@@ -41,7 +42,8 @@
           ;; Add the bookmark to the parent's children.
           (session/put! parent-id (sort-folder-children 
                                    (update-in parent [:bookmark/_parent] 
-                                              #(conj % (-clean-doc doc))) :bookmark/title)))))
+                                              #(conj % (-clean-doc doc)))
+                                   #(str/upper-case (or (:bookmark/title %) "")))))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]

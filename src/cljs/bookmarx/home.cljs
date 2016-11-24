@@ -1,8 +1,6 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
-            [accountant.core :as accountant]
             [goog.window :as gwin]
-            [taoensso.timbre :as log]
             [bookmarx.common :refer [env set-active parse-datomic-date]]
             [bookmarx.header :as header]))
 

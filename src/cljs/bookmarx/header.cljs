@@ -13,7 +13,7 @@
      [:a.header-navbar {:href (str (:prefix env) "/")} "Bookmarx" [:span.header-star]]
      (when full?
       [:form.navbar-form {:role "search"}
-        [:span.navbar-right
+        [:span.navbar-right {:style {:font-weight "normal"}}
          [:input {:type "text" :placeholder "Search" :key "search" :value (session/get :search) 
                   :on-change #(session/put! :search (-> % .-target .-value))}] 
          [:a.header-button {:href (str (:prefix env) "/search")}
@@ -23,7 +23,7 @@
            [:span.glyphicon.glyphicon-menu-hamburger {:color "white"}]]
           [:ul.dropdown-menu
            [:li [:a {:href (str (:prefix env) "/about")} "About..."]]
-           [:li [:a {:href (str (:prefix env) "/add") 
+           [:li [:a {:href (str (:prefix env) "/add")
                      :on-click #(session/remove! :add)} "Add Bookmark..."]]
            [:li [:a {:href "#"} "Show"]]
            [:li [:a {:href "#"} "Sort"]]

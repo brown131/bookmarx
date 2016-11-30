@@ -61,7 +61,7 @@
          [:span.bookmark-new])
        (when (and last-visited (> (.getTime (parse-datomic-date last-visited)) week-ago-ticks))
          [:span.bookmark-visited])]
-      (let [{:keys [bookmark/_parent open?]} (session/get id)]
+      (let [{:keys [bookmark/_parent bookmark/title open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                  :key (str id "-arrow-key")

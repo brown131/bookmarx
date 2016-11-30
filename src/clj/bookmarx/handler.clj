@@ -48,13 +48,14 @@
   (try
     (info "get-bookmarks")
     (let [conn (d/connect (env :database-uri))
-          bookmarks (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
-                                           :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                           :bookmark/created :bookmark/last-visited
-                                           :bookmark/visits :bookmark/parent 
-                                           {:bookmark/_parent 1}])
-                           :where [?e :bookmark/id]
-                           [(missing? $ ?e :bookmark/url)]] (d/db conn))
+          results (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url :bookmark/rating
+                                         :bookmark/icon :bookmark/icon-color :bookmark/created :bookmark/last-visited
+                                         :bookmark/visits :bookmark/parent {:bookmark/_parent 1}])
+                         :where [?e :bookmark/id]
+                                [(missing? $ ?e :bookmark/url)]] (d/db conn))
+          bookmarks (mapv #(vector (update-in (first %) [:bookmark/_parent]
+                                              (fn [p] (mapv (fn [b] (if (:bookmark/url b) b {:db/id (:db/id b)})) p))))
+                          results)
           headers {"content-type" "application/edn"}]
       {:status (or status 200)
        :headers (if (= (:csrf-token params) "true")

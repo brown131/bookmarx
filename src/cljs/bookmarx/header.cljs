@@ -25,7 +25,17 @@
            [:li [:a {:href (str (:prefix env) "/about")} "About..."]]
            [:li [:a {:href (str (:prefix env) "/add")
                      :on-click #(session/remove! :add)} "Add Bookmark..."]]
-           [:li [:a {:href "#"} "Show"]]
-           [:li [:a {:href "#"} "Sort"]]
+           [:li [:a {:href "#"} "Show" [:span.caret]]]
+           [:li.dropdown-submenu
+            {:on-click (fn [e]
+                         (.toggle (.-classList (.getElementById js/document "submenu"))
+                                  "dropdown-menu")
+                         ;; Can't prevent dropdown from closing due to Bootstrap 3 bug.
+                         (.preventDefault e)
+                         false)}
+            [:a {:href "#"} "Sort" [:span.caret]]
+            [:ul.dropdown-menu {:id "submenu" :display "block"}
+             [:li [:a {:href "#"} "Title"]]
+             [:li [:a {:href "#"} "Date Created"]]]]
            [:li [:a {:href "#"} "Empty trash"]]]]]])]]]))
 

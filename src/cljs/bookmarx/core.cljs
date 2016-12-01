@@ -50,8 +50,7 @@
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                    {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (mapv #(sort-folder-children (apply merge %)
-                                                   (fn [b] (str/upper-case
-                                                             (or (:bookmark/title b) ""))))
+                                                   (fn [b] (str/upper-case (or (:bookmark/title b) ""))))
                             (:body response))
             root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
             trash (:db/id (first (filter #(= "~Trash" (:bookmark/title %)) bookmarks)))

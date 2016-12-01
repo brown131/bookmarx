@@ -19,7 +19,7 @@
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
-  (let [[l f] (map vec ((juxt filter remove) #(:bookmark/url %) (:bookmark/_parent folder)))]
+  (let [[l f] (map vec ((juxt filter remove) :bookmark/url (:bookmark/_parent folder)))]
     (update-in folder [:bookmark/_parent]
                #(into [] (concat (sort-by sort-fn f) (sort-by sort-fn l))))))
 

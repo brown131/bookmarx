@@ -1,6 +1,6 @@
 ;;;; Import bookmarks from Bookmark4U DB into Bookmarx DB.
 ;;;; Run in bookmarx/svc with: lein exec script/import.clj
-(ns import)
+(ns bookmarx.import)
 
 ;; Load dependencies.
 (use '[leiningen.exec :only (deps)])

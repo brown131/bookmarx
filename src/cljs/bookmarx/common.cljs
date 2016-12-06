@@ -15,16 +15,16 @@
   []
   (if (session/get :active)
     (session/get :active)
-    (cookies/get "active" (session/get :root))))
+    (cookies/get "active" 1)))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
-  (let [[l f] (map vec ((juxt filter remove) :bookmark/url (:bookmark/_parent folder)))]
-    (update-in folder [:bookmark/_parent]
+  (let [[l f] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
+    (update-in folder [:bookmark/children]
                #(into [] (concat (sort-by sort-fn f) (sort-by sort-fn l))))))
 
-(defn parse-datomic-date
-  "Parse a Datomic date string into a Date.
+(defn parse-date
+  "Parse a date string into a Date.
   Format: \"Apr 30 2005 17:19:43 GMT-0500 (CDT))\""
   [datetime]
   (let [date-parts (str/split (str datetime) #" ")

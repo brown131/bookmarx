@@ -49,17 +49,12 @@
   []
   (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
                                    {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (mapv #(sort-folder-children (apply merge %)
-                                                   (fn [b] (str/upper-case (or (:bookmark/title b) ""))))
-                            (:body response))
-            root (:db/id (first (filter #(nil? (:bookmark/parent %)) bookmarks)))
-            trash (:db/id (first (filter #(= "~Trash" (:bookmark/title %)) bookmarks)))
-            active (cookies/get "active" root)]
-        (set-active active)
-        (session/put! :root root)
+            bookmarks (:body response)
+            trash (:bookmark/id (first (filter #(= "~Trash" (:bookmark/title %)) bookmarks)))]
+        (reset! session/state (merge bookmarks @session/state))
+        (set-active 1)
         (session/put! :trash trash)
-        (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
-        (doall (map #(session/put! (:db/id %) %) bookmarks)))))
+        (session/put! :csrf-token (get-in response [:headers "csrf-token"])))))
 
 (defn init! "Set the state for the application."
   []

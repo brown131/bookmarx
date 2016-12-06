@@ -5,13 +5,17 @@
             [bookmarx.middleware :refer [wrap-middleware]]
             [config.core :refer [env]]
             [taoensso.timbre :as timbre]
-            [datomic.api :as d]
+            [taoensso.carmine :as car]
             [ring.middleware.anti-forgery :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.edn :refer :all])
   (:gen-class))
 
 (timbre/refer-timbre)
+
+;; Setup redis connection.
+(defonce bookmarx-conn {:pool {} :spec {}})
+(defmacro wcar* [& body] `(car/wcar bookmarx-conn ~@body))
 
 (defn head []
   [:head
@@ -42,20 +46,21 @@
      (include-js "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js")
      (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
 
+(defn sort-folder-children "Sort the children of a folder by a sort function."
+  [folder sort-fn]
+  (let [[l f] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
+    (update-in folder [:bookmark/children]
+               #(into [] (concat (sort-by sort-fn f) (sort-by sort-fn l))))))
+
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
   [params & [status]]
   (try
     (info "get-bookmarks")
-    (let [conn (d/connect (env :database-uri))
-          results (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url :bookmark/rating
-                                         :bookmark/icon :bookmark/icon-color :bookmark/created :bookmark/last-visited
-                                         :bookmark/visits :bookmark/parent {:bookmark/_parent 1}])
-                         :where [?e :bookmark/id]
-                                [(missing? $ ?e :bookmark/url)]] (d/db conn))
-          bookmarks (mapv #(vector (update-in (first %) [:bookmark/_parent]
-                                              (fn [p] (mapv (fn [b] (if (:bookmark/url b) b {:db/id (:db/id b)})) p))))
-                          results)
+    (let [keys (map read-string (second (wcar* (car/select 1)
+                                               (car/keys "*"))))
+          values (wcar* (apply car/mget keys))
+          bookmarks (zipmap keys values)
           headers {"content-type" "application/edn"}]
       {:status (or status 200)
        :headers (if (= (:csrf-token params) "true")
@@ -68,15 +73,8 @@
   [id params & [status]]
   (try
     (infof "get-bookmark %s %s" id params)
-    (let [conn (d/connect (env :database-uri))
-          bookmark (d/q '[:find (pull ?e [:db/id :bookmark/id :bookmark/title :bookmark/url
-                                          :bookmark/rating :bookmark/icon :bookmark/icon-color
-                                          :bookmark/created :bookmark/last-visited
-                                          :bookmark/visits :bookmark/parent 
-                                          {:bookmark/_parent 1}])
-                          :in $ ?uuid
-                          :where [?e :bookmark/id ?uuid]] (d/db conn)
-                         (java.util.UUID/fromString (:id params)))
+    (let [bookmark (wcar* (car/select 1)
+                          (car/get (:id params)))
           headers {"content-type" "application/edn"}]
       {:status (or status 200)
        :headers (if (= (:csrf-token params) "true")
@@ -89,43 +87,54 @@
   [params & [status]]
   (try
     (infof "post-bookmark %s" params)
-    ; Add db/id and bookmark/id if missing.
-    (let [conn (d/connect (env :database-uri))
-          id (d/squuid)
+    (let [id (wcar* (car/select 1)
+                    (car/incr "last-bookmark-id"))
           now (java.util.Date.)
-          bookmark (assoc params :db/id #db/id[:db.part/user] :bookmark/id id
-                          :bookmark/created now :bookmark/last-visited now
+          bookmark (assoc params :bookmark/id id :bookmark/created now :bookmark/last-visited now
                           :bookmark/visits 1)
-          response @(d/transact conn [bookmark])]
-      (infof "response %s" (str response))
+          parent (wcar* (car/get (:bookmark/parent bookmark)))]
+      (infof "bookmark %s" (str bookmark))
+      (wcar*
+        (car/set (:bookmark/parent bookmark)
+                 (update-in parent [:bookmark/children] #(conj % bookmark)))
+        (car/bgsave))
       {:status (or status 200)
        :headers {"content-type" "application/edn"}
-       :body (pr-str {:db/id (second (first (vec (:tempids response))))
-                      :bookmark/id id})})
+       :body (pr-str bookmark)})
   (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn put-bookmark "Upsert a bookmark in the database for an HTTP request."
+(defn put-bookmark "Update a bookmark in the database for an HTTP request."
   [id params & [status]]
   (try
     (infof "put-bookmark %s %s" id params)
-    (let [conn (d/connect (env :database-uri))
-          response @(d/transact conn [params])]
-      {:status (or status 200)})
-  (catch Exception e (errorf "Error %s" (.toString e)))))
+    (let [now (java.util.Date.)
+          bookmark (update-in params [:bookmark/last-visited] now)
+          parent (wcar* (car/select 1)
+                        (car/get (:bookmark/parent bookmark)))]
+      (infof "bookmark %s" (str bookmark))
+      (wcar*
+        (car/set (:bookmark/parent bookmark)
+                 (update-in parent [:bookmark/children]
+                            #(mapv (fn [c] (if (= :bookmark/id id) bookmark c)) %)))
+        (car/bgsave))
+      {:status (or status 200)
+       :headers {"content-type" "application/edn"}
+       :body (pr-str bookmark)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Retract a bookmark in the database."
   [id & [status]]
   (try
     (infof "delete-bookmark %s" id)
-    (let [conn (d/connect (env :database-uri))
-          e (d/q '[:find ?e :in $ ?uuid :where [?e :bookmark/id ?uuid]] (d/db conn)
-                        (java.util.UUID/fromString id))
-          response @(d/transact conn `[[:db.fn/retractEntity ~(first (first e))]])]
+    (wcar*
+      (car/select 1)
+      (car/del id)
+      (car/bgsave))
 
       ;; TODO: If the bookmark is a folder, recursively delete its children,
       ;; moving links to the trash folder.
       
-      {:status (or status 200)})
+      {:status (or status 200)}
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes

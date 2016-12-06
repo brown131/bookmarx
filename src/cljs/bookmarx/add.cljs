@@ -15,12 +15,12 @@
 
 (defn -clean-doc "Remove temporary fields from the page document."
   [doc]
-  (dissoc @doc :bookmark/_parent :orig-parent :folder? :add? :delete? :query? :rating :rating-clicked))
+  (dissoc @doc :bookmark/children :orig-parent :folder? :add? :delete? :query? :rating :rating-clicked))
 
 (defn -get-active "Get the active bookmark id."
   [doc]
-  (if (:db/id (:bookmark/parent @doc))
-    (:db/id (:bookmark/parent @doc))
+  (if (:bookmark/parent @doc)
+    (:bookmark/parent @doc)
     (get-active)))
 
 (session/get :active)
@@ -31,44 +31,42 @@
                                        {:edn-params (-clean-doc doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            parent-id (get-in @doc [:bookmark/parent :db/id])
+            parent-id (:bookmark/parent @doc)
             parent (session/get parent-id)]
           ;; Set the new ids.
-          (swap! doc assoc @doc :db/id (:db/id body) :bookmark/id (:bookmark/id body))
+          (swap! doc assoc @doc :bookmark/id (:bookmark/id body))
 
           ;; Add the new folder to the session.
-          (when (:folder? @doc) (session/put! (:db/id @doc) (-clean-doc doc)))
+          (when (:folder? @doc) (session/put! (:bookmark/id @doc) (-clean-doc doc)))
                   
           ;; Add the bookmark to the parent's children.
           (session/put! parent-id (sort-folder-children 
-                                   (update-in parent [:bookmark/_parent] 
+                                   (update-in parent [:bookmark/children]
                                               #(conj % (-clean-doc doc)))
                                    #(str/upper-case (or (:bookmark/title %) "")))))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]
-  (let [parent-id (get-in @doc [:bookmark/parent :db/id])
+  (let [parent-id (:bookmark/parent @doc)
         parent (session/get parent-id)
-        orig-parent-id (if (get @doc :orig-parent)
-                         (get-in @doc [:orig-parent :db/id])
-                         parent-id)
+        orig-parent-id (if (get @doc :orig-parent) (:orig-parent @doc) parent-id)
         orig-parent (session/get orig-parent-id)
-        children (:bookmark/_parent parent)]
+        children (:bookmark/children parent)]
     ;; Replace the children of the folder with the children from the session folder.
     (when (:folder? @doc)
-      (session/put! (:db/id @doc)
-                    (assoc (-clean-doc doc) :bookmark/_parent
-                           (:bookmark/_parent (session/get (:db/id @doc))))))
+      (session/put! (:bookmark/id @doc)
+                    (assoc (-clean-doc doc) :bookmark/children
+                           (:bookmark/children (session/get (:bookmark/id @doc))))))
 
     ;; Remove the bookmark from the original parent folder.
     (session/put! orig-parent-id 
-                  (update-in orig-parent [:bookmark/_parent]
-                             #(remove (fn [b] (= (:db/id b) (:db/id @doc))) 
-                                      (:bookmark/_parent orig-parent))))
+                  (update-in orig-parent [:bookmark/children]
+                             #(remove (fn [b] (= (:bookmark/id b) (:bookmark/id @doc)))
+                                      (:bookmark/children orig-parent))))
 
     ;; Add the updated child to the parent folder.
     (session/put! parent-id (sort-folder-children 
-                             (update-in (session/get parent-id) [:bookmark/_parent] 
+                             (update-in (session/get parent-id) [:bookmark/children]
                                         #(conj % (-clean-doc doc))) :bookmark/title)))
 
   ;; Update the state in the remote repository.
@@ -82,15 +80,15 @@
   (log/debugf "delete")
 
   ;; Remove the bookmark from the session.
-  (when (:folder? @doc) (session/remove! (:db/id @doc)))
+  (when (:folder? @doc) (session/remove! (:bookmark/id @doc)))
                   
   ;; Remove the bookmark from the parent's children.
   (let [parent-id (-get-active doc)
         parent (session/get parent-id)
-        children (:bookmark/_parent parent)]
+        children (:bookmark/children parent)]
     (session/put! parent-id
-                  (update-in parent [:bookmark/_parent]
-                             #(remove (fn [b] (= (:db/id b) (:db/id @doc))) children))))
+                  (update-in parent [:bookmark/children]
+                             #(remove (fn [b] (= (:bookmark/id b) (:bookmark/id @doc))) children))))
 
   (go (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
                        {:edn-params (-clean-doc doc)
@@ -99,8 +97,8 @@
 
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]
-  (swap! doc update-in [:orig-parent] #(get @doc :bookmark/parent))
-  (swap! doc update-in [:bookmark/parent :db/id] #(session/get :trash))
+  (swap! doc update-in [:orig-parent] #(:bookmark/parent @doc))
+  (swap! doc update-in [:bookmark/parent] #(session/get :trash))
   (upsert-bookmark doc))
   
 (defn save-bookmark "Save a bookmark."
@@ -108,7 +106,7 @@
   (log/debugf "save %s" @doc)
   (cond (:add? @doc) (add-bookmark doc)
         (:delete? @doc) (if (or (:folder? @doc)
-                                (= (get-in @doc[:bookmark/parent :db/id]) (session/get :trash)))
+                                (= (:bookmark/parent @doc) (session/get :trash)))
                           (delete-bookmark doc)
                           (trash-bookmark doc))
          :else (upsert-bookmark doc))
@@ -186,7 +184,7 @@
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)
-                 (let [parent {:db/id (get-active)}
+                 (let [parent (get-active)
                        q (:query (url (-> js/window .-location .-href)))]
                    (merge {:add? true :bookmark/parent parent :orig-parent parent}
                           (when q {:add? true :query? true :bookmark/title (get q "title")

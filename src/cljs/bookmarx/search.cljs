@@ -14,7 +14,7 @@
          (empty? bookmarks) matches
          (nil? (:bookmark/url (first bookmarks)))
          (recur text (rest bookmarks)
-                (search-bookmarks text (-> bookmarks first :db/id session/get :bookmark/_parent)
+                (search-bookmarks text (-> bookmarks first :bookmark/id session/get :bookmark/children)
                                   matches))
          (or (str/index-of (str/upper-case (:bookmark/title (first bookmarks)))
                            (str/upper-case text))
@@ -25,7 +25,7 @@
 
 (defn bookmark-link "Render a bookmark link."
   [bookmark]
-  (let [{:keys [db/id bookmark/title bookmark/url bookmark/rating
+  (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color]} bookmark]
    [:div.bookmark_children {:key (str id "-key")}
     (if icon
@@ -47,5 +47,5 @@
    [:div.breadcrumbs "Search: \"" (session/get :search) "\"" ]
    (doall (map #(bookmark-link %)
                (search-bookmarks (session/get :search)
-                                 (:bookmark/_parent (session/get (session/get :root))))))
+                                 (:bookmark/children (session/get 1)))))
    [:div [:a {:href (str (:prefix env) "/")} "go to the home page"]]])

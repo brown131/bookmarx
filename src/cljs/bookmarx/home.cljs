@@ -8,7 +8,7 @@
   ([id] (-get-route id [id]))
   ([id route]
    (if-let [parent (:bookmark/parent (session/get id))]
-     (recur (:bookmark/id parent) (cons (:bookmark/id parent) route))
+     (recur parent (cons parent route))
      route)))
 
 (defn breadcrumb "Renders a breadcrumb."
@@ -40,7 +40,7 @@
   [bookmark]
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating bookmark/children
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
-                bookmark/visits]} bookmark
+                bookmark/visits bookmark/link-count]} bookmark
         week-ago-ticks (- (. js/Date (now)) 604800000)]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
@@ -74,7 +74,7 @@
                 :on-click #(session/put! :add (assoc bookmark :folder? true))}])
          [:a.bookmark {:key (str id "-title-key") :on-click #(set-active id)}
           (if (= title "~Trash") "Trash" title)]
-         [:span.badge (count-links children)]
+         [:span.badge link-count]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                       (doall (map #(bookmark-tree %) children))])]))))
 

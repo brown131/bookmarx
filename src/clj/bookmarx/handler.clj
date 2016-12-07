@@ -1,5 +1,6 @@
 (ns bookmarx.handler
-  (:require [compojure.core :refer [GET POST PUT DELETE defroutes]]
+  (:require [clojure.string :as str]
+            [compojure.core :refer [GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [bookmarx.middleware :refer [wrap-middleware]]
@@ -47,10 +48,12 @@
      (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
-  [folder sort-fn]
-  (let [[l f] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
+  [folder bookmarks]
+  (let [[links folders] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
     (update-in folder [:bookmark/children]
-               #(into [] (concat (sort-by sort-fn f) (sort-by sort-fn l))))))
+               (fn [_] (into [] (concat (sort-by #(str/upper-case (:bookmark/title (get bookmarks (:bookmark/id %))))
+                                                                  folders)
+                                        (sort-by #(str/upper-case (:bookmark/title %)) links)))))))
 
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
@@ -60,7 +63,8 @@
     (let [keys (map read-string (second (wcar* (car/select 1)
                                                (car/keys "*"))))
           values (wcar* (apply car/mget keys))
-          bookmarks (zipmap keys values)
+          bookmark-map (zipmap keys values)
+          bookmarks (zipmap keys (mapv #(sort-folder-children % bookmark-map) values))
           headers {"content-type" "application/edn"}]
       {:status (or status 200)
        :headers (if (= (:csrf-token params) "true")

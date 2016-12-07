@@ -19,7 +19,7 @@
 ;;; Bookmark4U connection.
 (def db-spec {:classname "com.mysql.jdbc.Driver" ; must be in classpath
               :subprotocol     "mysql"
-              :subname         "//localhost:3306/bookmark4u"
+              :subname         "//www.browncross.com:3306/bookmark4u"
               :user            "root"
               :password        "wurzel"})
 

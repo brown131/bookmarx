@@ -26,21 +26,11 @@
      (doall (map #(let [{:keys [bookmark/id bookmark/title]} (session/get %)]
                    (breadcrumb id title (= % (last route)))) route))]))
 
-(defn count-links "Count the number of links in a folder and its children."
-  ([children] (count-links children 0))
-  ([children link-count]
-   (cond
-     (empty? children) link-count
-     (session/get (:bookmark/id (first children)))
-     (count-links (rest children) 
-      (count-links (:bookmark/children (session/get (:bookmark/id (first children)))) link-count))
-     :else (count-links (rest children) (inc link-count)))))
-
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark]
-  (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating bookmark/children
+  (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
-                bookmark/visits bookmark/link-count]} bookmark
+                bookmark/visits]} bookmark
         week-ago-ticks (- (. js/Date (now)) 604800000)]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
@@ -61,7 +51,7 @@
          [:span.bookmark-new])
        (when (and last-visited (> (.getTime (parse-date last-visited)) week-ago-ticks))
          [:span.bookmark-visited])]
-      (let [{:keys [bookmark/children bookmark/title open?]} (session/get id)]
+      (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                  :key (str id "-arrow-key")

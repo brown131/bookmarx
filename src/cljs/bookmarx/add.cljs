@@ -23,27 +23,22 @@
     (:bookmark/parent @doc)
     (get-active)))
 
-(session/get :active)
 (defn add-bookmark "Add a new bookmark."
   [doc]
-  ;; Update the state in the remote repository.
   (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
                                        {:edn-params (-clean-doc doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            parent-id (:bookmark/parent @doc)
-            parent (session/get parent-id)]
-          ;; Set the new ids.
-          (swap! doc assoc @doc :bookmark/id (:bookmark/id body))
+            bookmark (first body)]
+        ;; Set the new id.
+        (swap! doc assoc :bookmark/id (:bookmark/id bookmark)
+               :bookmark/created (:bookmark/created bookmark)
+               :bookmark/last-visited (:bookmark/last-visited bookmark)
+               :bookmark/visits (:bookmark/visits bookmark)
+               :bookmark/revision (:bookmark/revision bookmark))
 
-          ;; Add the new folder to the session.
-          (when (:folder? @doc) (session/put! (:bookmark/id @doc) (-clean-doc doc)))
-                  
-          ;; Add the bookmark to the parent's children.
-          (session/put! parent-id (sort-folder-children 
-                                   (update-in parent [:bookmark/children]
-                                              #(conj % (-clean-doc doc)))
-                                   #(str/upper-case (or (:bookmark/title %) "")))))))
+        ;; Add the folders to the session.
+        (map #(session/put! (:bookmark/id %) %) (remove :bookmark/url body)))))
 
 (defn upsert-bookmark "Upsert a bookmark."
   [doc]
@@ -98,7 +93,7 @@
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]
   (swap! doc update-in [:orig-parent] #(:bookmark/parent @doc))
-  (swap! doc update-in [:bookmark/parent] #(session/get :trash))
+  (swap! doc update-in [:bookmark/parent] #(- 0 1))
   (upsert-bookmark doc))
   
 (defn save-bookmark "Save a bookmark."
@@ -106,7 +101,7 @@
   (log/debugf "save %s" @doc)
   (cond (:add? @doc) (add-bookmark doc)
         (:delete? @doc) (if (or (:folder? @doc)
-                                (= (:bookmark/parent @doc) (session/get :trash)))
+                                (= (:bookmark/parent @doc) -1))
                           (delete-bookmark doc)
                           (trash-bookmark doc))
          :else (upsert-bookmark doc))

@@ -20,7 +20,8 @@
                        :on-click #(session/update-in! [:add :bookmark/parent :db/id] (fn [_] id))
                        :href (str (:prefix env) "/add")} title])
        [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
-        (doall (map #(bookmark-tree %) _parent))]])))
+        (doall (map #(bookmark-tree (session/get (:db/id %)))
+                    (remove #(or url (= (:db/id %) (session/get-in [:add :db/id]))) _parent)))]])))
 
 (defn folder-page "Select a parent folder for a bookmark."
   []

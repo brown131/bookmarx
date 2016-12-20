@@ -5,17 +5,13 @@
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
-            [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.common :refer [env set-active sort-folder-children]]
+            [bookmarx.common :refer [env load-bookmarks set-active!]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
-            [bookmarx.search :as search])
-  (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
+            [bookmarx.search :as search]))
 
 (enable-console-print!)
 
@@ -45,18 +41,10 @@
   []
   (reagent/render [:div [current-page]] (.getElementById js/document "app")))
 
-(defn get-bookmarks "Load bookmarks from the server."
-  []
-  (go (let [response (<! (http/get (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                   {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (:body response)]
-        (reset! session/state (merge bookmarks @session/state))
-        (set-active 1)
-        (session/put! :csrf-token (get-in response [:headers "csrf-token"])))))
-
 (defn init! "Set the state for the application."
   []
-  (get-bookmarks)
+  (load-bookmarks)
+  (set-active! 1)
   (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!
    {:nav-handler (fn [path] (secretary/dispatch! path))

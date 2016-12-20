@@ -16,10 +16,8 @@
          (recur text (rest bookmarks)
                 (search-bookmarks text (-> bookmarks first :bookmark/id session/get :bookmark/children)
                                   matches))
-         (or (str/index-of (str/upper-case (:bookmark/title (first bookmarks)))
-                           (str/upper-case text))
-             (str/index-of (str/upper-case (:bookmark/url (first bookmarks)))
-                           (str/upper-case text)))
+         (or (str/index-of (str/upper-case (:bookmark/title (first bookmarks))) (str/upper-case text))
+             (str/index-of (str/upper-case (:bookmark/url (first bookmarks))) (str/upper-case text)))
          (recur text (rest bookmarks) (conj matches (first bookmarks)))
          :else (recur text (rest bookmarks) matches))))
 

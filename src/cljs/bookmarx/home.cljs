@@ -1,13 +1,15 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.common :refer [env set-active parse-date]]
+            [bookmarx.common :refer [env set-active! parse-date]]
             [bookmarx.header :as header]))
+
+(def ticks-in-week (* 1000 60 60 24 7))
 
 (defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
   ([id route]
-   (if-let [parent (:bookmark/parent (session/get id))]
+   (if-let [parent (:bookmark/parent-id (session/get id))]
      (recur parent (cons parent route))
      route)))
 
@@ -16,7 +18,7 @@
   (if active?
     [:li.active {:key (str id "-bc-key")} (if (= title "~Trash") "Trash" title)]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(set-active id) :key (str id "-a-key")}
+     [:a {:on-click #(set-active! id) :key (str id "-a-key")}
       (if (= title "~Trash") "Trash" title)]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
@@ -27,11 +29,12 @@
                    (breadcrumb id title (= % (last route)))) route))]))
 
 (defn bookmark-tree "Render a bookmark in a tree."
-  [bookmark]
+  [bookmark-key]
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
-                bookmark/visits]} bookmark
-        week-ago-ticks (- (. js/Date (now)) 604800000)]
+                bookmark/visits] :as bookmark} (if (map? bookmark-key) bookmark-key
+                                                                       (session/get bookmark-key))
+        week-ago-ticks (- (. js/Date (now)) ticks-in-week)]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon
@@ -62,7 +65,7 @@
            [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
                 :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
                 :on-click #(session/put! :add (assoc bookmark :folder? true))}])
-         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active id)}
+         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active! id)}
           (if (= title "~Trash") "Trash" title)]
          [:span.badge link-count]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}

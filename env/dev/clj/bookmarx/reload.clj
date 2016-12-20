@@ -28,19 +28,19 @@
 
 (def root (first (filter #(nil? (:bookmark/parent %)) download)))
 
-(def old-dbids (reduce #(assoc %1 (:db/id %2) %2) {} download))
+(def old-db-ids (reduce #(assoc %1 (:db/id %2) %2) {} download))
 
 (def dbids (atom {}))
 
 (def retry (atom []))
 
-(def bookmarkids (apply merge (map #(merge {(:bookmark/id %) %}
-                                           (apply merge (map (fn [b] {(:bookmark/id b) b})
-                                                             (:bookmark/_parent %)))) download)))
+(def bookmark-ids (apply merge (map #(merge {(:bookmark/id %) %}
+                                             (apply merge (map (fn [b] {(:bookmark/id b) b})
+                                                              (:bookmark/_parent %)))) download)))
 (defn get-bookmarks [bookmark]
   (vec (reduce #(if (:bookmark/url %2)
                   (conj %1 %2)
-                  (concat %1 (get-bookmarks (get old-dbids (:db/id %2)))))
+                  (concat %1 (get-bookmarks (get old-db-ids (:db/id %2)))))
                [bookmark] (:bookmark/_parent bookmark))))
 
 (defn prepare-bookmark [bookmark]

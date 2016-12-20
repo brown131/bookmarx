@@ -1,5 +1,6 @@
 (ns bookmarx.handler
-  (:require [clojure.string :as str]
+  (:require [clojure.data :refer [diff]]
+            [clojure.string :as str]
             [compojure.core :refer [GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
@@ -16,12 +17,11 @@
 
 ;; Setup redis connection.
 (defonce bookmarx-conn {:pool {} :spec {}})
-(defmacro wcar* [& body] `(car/wcar bookmarx-conn ~@body))
+(defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select 1) ~@body))
 
 ;; Cache
-(def bookmarks (atom (let [keys (map read-string (second (wcar* (car/select 1)
-                                                                (car/keys "*"))))
-                           values (wcar* (apply car/mget keys))]
+(def bookmarks (atom (let [keys (remove symbol? (map read-string (second (wcar* (car/keys "*")))))
+                           values (second (wcar* (apply car/mget keys)))]
                        (zipmap keys values))))
 
 (defn head []
@@ -63,119 +63,152 @@
   [folder]
   (let [[links folders] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
     (update-in folder [:bookmark/children]
-               (fn [_] (into [] (concat (sort-by #(str/upper-case (:bookmark/title (get @bookmarks (:bookmark/id %))))
+               (fn [_] (into [] (concat (sort-by #(str/upper-case (:bookmark/title (get @bookmarks %)))
                                                  folders)
                                         (sort-by #(str/upper-case (:bookmark/title %)) links)))))))
+
+(defn get-response "Save changed bookmarks and build the response."
+  [changed-ids & [status]]
+  ; Update the revision.
+  (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
+    ;; Set the revision in the changed bookmarks.
+    (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
+                changed-ids))
+
+    ;; Save the changes.
+    (wcar*
+      (dorun (map #(car/set % (get @bookmarks %)) changed-ids))
+      (car/bgsave))
+
+    ;; Return the list of changed folders and the latest revision.
+    {:status (or status 200)
+     :headers {"content-type" "application/edn"}
+     :body (pr-str {:bookmarks (mapv #(get @bookmarks %) changed-ids)
+                    :revision latest-revision})}))
 
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
   [params & [status]]
   (try
     (info "get-bookmarks")
-    {:status (or status 200)
-     :headers (get-headers params)
-     :body (pr-str @bookmarks)}
+    (let [revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))]
+      {:status (or status 200)
+       :headers (get-headers params)
+       :body (pr-str {:bookmarks (into [] (vals (dissoc @bookmarks :latest-revision)))
+                      :revision revision})})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn get-bookmark "Get a bookmark in an HTTP response."
-  [id params & [status]]
+(defn get-revised-bookmarks "Get bookmarks greater than a revision number in an HTTP request."
+  [rev params & [status]]
   (try
-    (infof "get-bookmark %s %s" id params)
-    {:status (or status 200)
-     :headers (get-headers params)
-     :body (pr-str (get @bookmarks id))}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (infof "get-revised-bookmarks %s %s" rev params)
+    (let [revision (Integer/parseInt rev)]
+      {:status (or status 200)
+       :headers (get-headers params)
+       :body (pr-str {:bookmarks (into [] (filter #(> (:bookmark/revision %) revision) @bookmarks))
+                      :revision (second (wcar* (car/get "latest-revision")))})})
+      (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [params & [status]]
   (try
     (infof "post-bookmark %s" params)
-    (let [bookmark-id (second (wcar* (car/select 1)
-                                     (car/incr "last-bookmark-id")))
+    (let [bookmark-id (second (wcar* (car/incr "last-bookmark-id")))
           now (java.util.Date.)
           bookmark (assoc params :bookmark/id bookmark-id :bookmark/created now
                                  :bookmark/last-visited now :bookmark/visits 1
                                  :bookmark/revision 1)
           is-link? (:bookmark/url bookmark)
-          parent-id (:bookmark/parent bookmark)
-          changed-bookmark-ids
+          parent-id (:bookmark/parent-id bookmark)
+          changed-ids
           (loop [ancestor-ids [parent-id]]
-            (let [ancestor-id (first ancestor-ids)
-                  ancestor (get @bookmarks ancestor-id)]
-              ;; Increment the link count in the ancestor if it is a link.
-              (when is-link?
-                (swap! bookmarks update-in [ancestor-id :bookmark/link-count] inc) )
-              ;; Increment the revision of the ancestor.
-              (swap! bookmarks update-in [ancestor-id :bookmark/revision] inc)
-              (if (not (and is-link? (:bookmark/parent ancestor)))
+            (let [ancestor (get @bookmarks (first ancestor-ids))]
+              (if (not (and is-link? (:bookmark/parent-id ancestor)))
                 ancestor-ids
-                (recur (cons (:bookmark/parent ancestor) ancestor-ids)))))]
+                (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))]
+      ;; Increment the link count in the ancestors.
+      (when is-link?
+        (dorun (map #(swap! bookmarks update-in [% :bookmark/link-count] inc) changed-ids)))
+
       ;; Add the new folder to cache.
       (when-not is-link?
         (swap! bookmarks assoc bookmark-id bookmark))
 
       ;; Add the bookmark to its parent folder.
       (swap! bookmarks update-in [parent-id :bookmark/children]
-             #(conj % (if is-link? bookmark {:bookmark/id bookmark-id})))
+             #(conj % (if is-link? bookmark bookmark-id)))
 
       ;; Re-sort the bookmarks in the parent folder.
       (swap! bookmarks update parent-id sort-folder-children)
 
-      ;; Save the changes.
-      (wcar*
-        (dorun (map #(car/set % (get @bookmarks %)) changed-bookmark-ids))
-        (car/bgsave))
-
-      ;; Return the list of changed folders.
-      {:status (or status 200)
-       :headers {"content-type" "application/edn"}
-       :body (pr-str (mapv #(get @bookmarks %) changed-bookmark-ids))})
+      (get-response changed-ids status))
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
-;; TODO: Rewrite this
+(defn update-bookmark "Update a bookmark."
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url]} bookmark]
+  ;; If it's a link, update it in it's parent.
+  (when url
+    (swap! bookmarks update-in [parent-id :bookmark/children]
+     #(mapv (fn [b] (if (and (:bookmark/url b) (= id (:bookmark/id b))) bookmark b)) %)))
+
+  ;; Return the changed folder.
+  [(get @bookmarks (if url parent-id id))])
+
+(defn move-bookmark "Move a bookmark to a different folder."
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url]} bookmark]
+  (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
+        is-link? (:bookmark/url bookmark)
+        ancestor-ids
+        (loop [a-ids [parent-id]]
+          (let [a-id (first a-ids)
+                a (get @bookmarks a-id)]
+            (if-not (:bookmark/parent-id a) a-ids (recur (cons (:bookmark/parent-id a) a-ids)))))
+        orig-ancestor-ids
+        (loop [oa-ids [parent-id]]
+          (let [oa-id (first oa-ids)
+                oa (get @bookmarks oa-id)]
+            (if-not (:bookmark/parent-id oa) oa-ids (recur (cons (:bookmark/parent-id oa) oa-ids)))))
+        diffs (diff ancestor-ids orig-ancestor-ids)
+        changed-ids (concat (first diff) (second diff))]
+    ;; Increment the link count in the ancestors.
+    (dorun (map #(swap! bookmarks update-in [% :bookmark/link-count] inc) (first diffs)))
+
+    ;; Decrement the link count in the original ancestors.
+    (dorun (map #(swap! bookmarks update-in [% :bookmark/link-count] dec) (second diffs)))
+
+    ;; Remove the bookmark from the original folder.
+    (swap! bookmarks update-in [orig-parent-id :bookmark/children]
+           #(remove (fn [b] (= (if (:bookmark/url b) (:bookmark/id b) b) id)) %))
+
+    ;; Add the bookmark to the new folder.
+    (swap! bookmarks update-in [parent-id :bookmark/children]
+           #(conj % (if (:bookmark/url %) bookmark id)))
+
+    ;; Resort the bookmarks in the folder if the title changed.
+    (when-not (= (:bookmark/title bookmark)
+                 (get-in @bookmarks [orig-parent-id :bookmark/title]))
+      (sort-folder-children (get @bookmarks parent-id)))
+
+    ;; Return the list of changed folders.
+    (mapv #(get @bookmarks %) changed-ids)))
+
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
   [id params & [status]]
   (try
     (infof "put-bookmark %s %s" id params)
     (let [bookmark (:body params)
-          bookmark-id (:bookmark/id bookmark)
-          parent-id (:bookmark/parent bookmark)
-          orig-parent-id (get-in @bookmarks [bookmark-id :bookmark/parent])
-          bookmark (update-in params [:bookmark/last-visited] (java.util.Date.))
-          changed-bookmarks (into [] (distinct []))]
-      (if (= parent-id orig-parent-id)
-        (if (:bookmark/url bookmark)
-          ;; Update link in its folder.
-          (swap! bookmarks update-in [parent-id :bookmark/children]
-                 #(map (fn [b] (if (= (:bookmark/id b) bookmark-id) bookmark b)) %))
-          ;; Update the folder.
-          (swap! bookmarks update bookmark-id bookmark))
-        (do
-          ;; Remove bookmark from the original folder.
-          (swap! bookmarks update-in [orig-parent-id :bookmark/children]
-                 #(remove (fn [b] (= (:bookmark/id b) bookmark-id)) %))
-          ;; Add the bookmark to the new folder.
-          (swap! bookmarks update-in [parent-id :bookmark/children]
-                 #(conj % (if (:bookmark/url %) bookmark {:bookmark/id bookmark-id})))
-
-          ;; If it's a folder: update the folder.
-          (when-not (:bookmark/url bookmark)
-            (swap! bookmarks update bookmark-id bookmark))))
-
+          parent-id (:bookmark/parent-id bookmark)
+          orig-parent-id (get-in @bookmarks [(:bookmark/id bookmark) :bookmark/parent-id])
+          changed-ids (if (= (:bookmark/parent-id bookmark) orig-parent-id)
+                        (update-bookmark bookmark)
+                        (move-bookmark bookmark))]
       ;; Resort the bookmarks in the folder if the title changed.
       (when-not (= (:bookmark/title bookmark)
                    (get-in @bookmarks [orig-parent-id :bookmark/title]))
         (sort-folder-children (get @bookmarks parent-id)))
 
-      ;; Save the changed folders.
-      (wcar*
-        (map #(car/set (:bookmark/id %) %) changed-bookmarks)
-        (car/bgsave))
-
       ;; Return the list of changed folders.
-      {:status (or status 200)
-       :headers {"content-type" "application/edn"}
-       :body (pr-str changed-bookmarks)})
+      (get-response changed-ids status))
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
@@ -184,32 +217,31 @@
     (infof "delete-bookmark %s" id)
     (let [bookmark-id (Integer/parseInt id)
           bookmark (get @bookmarks bookmark-id)
-          parent-id (:bookmark/parent bookmark)
+          parent-id (:bookmark/parent-id bookmark)
           is-link? (:bookmark/url bookmark)
-          changed-bookmark-ids
+          changed-ids
           (loop [ancestor-ids [parent-id]]
-            (let [ancestor-id (first ancestor-ids)
-                  ancestor (get @bookmarks ancestor-id)]
-              ;; Subtract the link count from the ancestor.
-              (swap! bookmarks update-in [ancestor-id :bookmark/link-count]
-                     #(if (:bookmark/link-count bookmark)
-                        (- % (:bookmark/link-count bookmark))
-                        (dec %)))
-              ;; Increment the revision of the ancestor.
-              (swap! bookmarks update-in [ancestor-id :bookmark/revision] inc)
-              (if (or is-link? (not (:bookmark/parent ancestor)))
+            (let [ancestor (get @bookmarks (first ancestor-ids))]
+              (if (or is-link? (not (:bookmark/parent-id ancestor)))
                 ancestor-ids
-                (recur (conj (:bookmark/parent ancestor) ancestor-ids)))))
+                (recur (conj (:bookmark/parent-id ancestor) ancestor-ids)))))
           deleted-bookmark-ids
           (when-not is-link?
-             ;; Create a list with the folder and any child folders.
-             (into [] (loop [bookmark-id (:bookmark/id bookmark)]
-                        (let [children (remove :bookmark/url
-                                               (:bookmark/children (get @bookmarks bookmark-id)))]
-                          (cons bookmark-id (map #(recur (:bookmark/id %)) children))))))]
+            ;; Create a list with the folder and any child folders.
+            (reduce #(if (:bookmark/url %2) %1 (cons %2 %1)) [bookmark-id]
+                    (:bookmark/children bookmark)))]
+      ;; Subtract the link count from the ancestor.
+      (dorun (map #(swap! bookmarks update-in [% :bookmark/link-count]
+                          (fn [b] (if (:bookmark/link-count bookmark)
+                                    (- b (:bookmark/link-count bookmark))
+                                    (dec b)))) changed-ids))
+
+      ;; Increment the revision of the ancestor.
+      (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] inc) changed-ids))
+
       ;; Remove the bookmark from the parent.
       (swap! bookmarks update-in [parent-id :bookmark/children]
-             #(remove (fn [b] (= (:bookmark/id b) bookmark-id)) %))
+             #(remove (fn [b] (= (if (:bookmark/id b) (:bookmark/id b) b) bookmark-id)) %))
 
       ;; Remove bookmark(s) from the cache, if it is a folder.
       (when-not is-link?
@@ -217,16 +249,15 @@
 
       ;; Delete the bookmark and any children, and update the parent.
       (wcar*
-        (car/select 1)
         (when-not is-link?
           (dorun (map car/del deleted-bookmark-ids)))
-        (dorun (map #(car/set % (get @bookmarks %)) changed-bookmark-ids))
+        (dorun (map #(car/set % (get @bookmarks %)) changed-ids))
         (car/bgsave))
 
       ;; Return the list of changed folders.
       {:status (or status 200)
        :headers {"content-type" "application/edn"}
-       :body (pr-str (mapv #(get @bookmarks %) changed-bookmark-ids))})
+       :body (pr-str (mapv #(get @bookmarks %) changed-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
@@ -240,8 +271,8 @@
   (GET "/search" [] loading-page)
 
   ;; API
+  (GET "/api/bookmarks/since/:rev" {rev :id params :params} [] (get-revised-bookmarks rev params))
   (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
-  (GET "/api/bookmarks/:id" {id :id params :params} [] (get-bookmark id params))
   (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
   (PUT "/api/bookmarks/:id" {id :id params :edn-params} [] (put-bookmark id params))
   (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))

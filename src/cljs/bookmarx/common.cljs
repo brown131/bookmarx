@@ -10,6 +10,21 @@
 
 (def env (read-string js/env))
 
+(defn set-local-storage!
+  "Set `key' in browser's localStorage to `val`."
+  [key val]
+  (.setItem (.-localStorage js/window) key val))
+
+(defn get-local-storage
+  "Returns value of `key' from browser's localStorage."
+  [key]
+  (.getItem (.-localStorage js/window) key))
+
+(defn remove-local-storage!
+  "Remove the browser's localStorage value for the given `key`"
+  [key]
+  (.removeItem (.-localStorage js/window) key))
+
 (defn set-bookmarks! "Set session bookmarks from a list of bookmarks."
   [bookmarks]
   (let [bookmark-map (into {} (map #(vector (:bookmark/id %) %) bookmarks))]

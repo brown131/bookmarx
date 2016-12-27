@@ -68,7 +68,7 @@
                                         (sort-by #(str/upper-case (:bookmark/title %)) links)))))))
 
 (defn get-response "Save changed bookmarks and build the response."
-  [changed-ids & [status]]
+  [changed-ids]
   ; Update the revision.
   (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
     ;; Set the revision in the changed bookmarks.
@@ -81,10 +81,7 @@
       (car/bgsave))
 
     ;; Return the list of changed folders and the latest revision.
-    {:status (or status 200)
-     :headers {"content-type" "application/edn"}
-     :body (pr-str {:bookmarks (mapv #(get @bookmarks %) changed-ids)
-                    :revision latest-revision})}))
+    {:bookmarks (mapv #(get @bookmarks %) changed-ids) :revision latest-revision}))
 
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
@@ -124,7 +121,7 @@
           (loop [ancestor-ids [parent-id]]
             (let [ancestor (get @bookmarks (first ancestor-ids))]
               (if (not (and is-link? (:bookmark/parent-id ancestor)))
-                ancestor-ids
+                (reverse ancestor-ids)
                 (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))]
       ;; Increment the link count in the ancestors.
       (when is-link?
@@ -136,26 +133,32 @@
 
       ;; Add the bookmark to its parent folder.
       (swap! bookmarks update-in [parent-id :bookmark/children]
-             #(conj % (if is-link? bookmark bookmark-id)))
+             #(vec (cons (if is-link? bookmark bookmark-id) %)))
 
       ;; Re-sort the bookmarks in the parent folder.
       (swap! bookmarks update parent-id sort-folder-children)
 
-      (get-response changed-ids status))
+      {:status (or status 200)
+       :headers {"content-type" "application/edn"}
+       :body (pr-str (assoc (get-response changed-ids) :bookmark-id bookmark-id))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
-  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url]} bookmark]
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url] :as bookmark}]
   ;; If it's a link, update it in it's parent.
-  (when url
+  (if url
+    ;; TODO: Update only relevant fields.
     (swap! bookmarks update-in [parent-id :bookmark/children]
-     #(mapv (fn [b] (if (and (:bookmark/url b) (= id (:bookmark/id b))) bookmark b)) %)))
+     #(mapv (fn [b] (if (and (:bookmark/url b) (= id (:bookmark/id b)))
+                      (merge b (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+                                                      :bookmark/icon :bookmark/icon-color])))) %))
+    (swap! bookmarks #(merge % (select-keys bookmark [:bookmark/title]))))
 
   ;; Return the changed folder.
   [(get @bookmarks (if url parent-id id))])
 
 (defn move-bookmark "Move a bookmark to a different folder."
-  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url]} bookmark]
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url] :as bookmark}]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
         is-link? (:bookmark/url bookmark)
         ancestor-ids
@@ -193,11 +196,10 @@
     (mapv #(get @bookmarks %) changed-ids)))
 
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
-  [id params & [status]]
+  [id bookmark & [status]]
   (try
-    (infof "put-bookmark %s %s" id params)
-    (let [bookmark (:body params)
-          parent-id (:bookmark/parent-id bookmark)
+    (infof "put-bookmark %s %s" id bookmark)
+    (let [parent-id (:bookmark/parent-id bookmark)
           orig-parent-id (get-in @bookmarks [(:bookmark/id bookmark) :bookmark/parent-id])
           changed-ids (if (= (:bookmark/parent-id bookmark) orig-parent-id)
                         (update-bookmark bookmark)
@@ -208,7 +210,10 @@
         (sort-folder-children (get @bookmarks parent-id)))
 
       ;; Return the list of changed folders.
-      (get-response changed-ids status))
+
+      {:status (or status 200)
+       :headers {"content-type" "application/edn"}
+       :body (pr-str (get-response changed-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
@@ -222,9 +227,9 @@
           changed-ids
           (loop [ancestor-ids [parent-id]]
             (let [ancestor (get @bookmarks (first ancestor-ids))]
-              (if (or is-link? (not (:bookmark/parent-id ancestor)))
-                ancestor-ids
-                (recur (conj (:bookmark/parent-id ancestor) ancestor-ids)))))
+              (if (not (and is-link? (:bookmark/parent-id ancestor)))
+                (reverse ancestor-ids)
+                (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
           deleted-bookmark-ids
           (when-not is-link?
             ;; Create a list with the folder and any child folders.
@@ -271,7 +276,7 @@
   (GET "/search" [] loading-page)
 
   ;; API
-  (GET "/api/bookmarks/since/:rev" {rev :id params :params} [] (get-revised-bookmarks rev params))
+  (GET "/api/bookmarks/since/:rev" {rev :rev params :params} [] (get-revised-bookmarks rev params))
   (GET "/api/bookmarks" {params :params} [] (get-bookmarks params))
   (POST "/api/bookmarks" {params :edn-params} (post-bookmark params))
   (PUT "/api/bookmarks/:id" {id :id params :edn-params} [] (put-bookmark id params))

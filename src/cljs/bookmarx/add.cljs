@@ -29,60 +29,44 @@
                                        {:edn-params (-clean-doc doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            bookmark (first body)]
-        ;; Set the new id.
-        (swap! doc assoc :bookmark/id (:bookmark/id bookmark)
-               :bookmark/created (:bookmark/created bookmark)
-               :bookmark/last-visited (:bookmark/last-visited bookmark)
-               :bookmark/visits (:bookmark/visits bookmark)
-               :bookmark/revision (:bookmark/revision bookmark))
+            bookmark (first (if (:bookmark/url @doc)
+                              (filter #(= (:bookmark/id %) (:bookmark-id body))
+                                      (:bookmark/children (first (:bookmarks body))))
+                              (:bookmarks body)))]
+        ;; Set the new fields.
+        (swap! doc merge (select-keys bookmark [:bookmark/id :bookmark/created :bookmark/last-visited
+                                                :bookmark/visits :bookmark/revision]))
 
         ;; Replace the changed folders in the session.
-        (map #(session/put! (:bookmark/id %) %) (remove :bookmark/url body)))))
+        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
+
+        ;; Update the revision number.
+        (session/put! :revision (:revision body)))))
 
 (defn update-bookmark "Update a bookmark."
   [doc]
-  (let [parent-id (:bookmark/parent-id @doc)
-        parent (session/get parent-id)
-        orig-parent-id (if (get @doc :orig-parent-id) (:orig-parent-id @doc) parent-id)
-        orig-parent (session/get orig-parent-id)
-        children (:bookmark/children parent)]
-    ;; Replace the children of the folder with the children from the session folder.
-    (when (:folder? @doc)
-      (session/put! (:bookmark/id @doc)
-                    (assoc (-clean-doc doc) :bookmark/children
-                           (:bookmark/children (session/get (:bookmark/id @doc))))))
-
-    ;; Remove the bookmark from the original parent folder.
-    (session/put! orig-parent-id 
-                  (update-in orig-parent [:bookmark/children]
-                             #(remove (fn [b] (= (:bookmark/id b) (:bookmark/id @doc)))
-                                      (:bookmark/children orig-parent))))
-
-    ;; Add the updated child to the parent folder.
-    (session/put! parent-id (sort-folder-children 
-                             (update-in (session/get parent-id) [:bookmark/children]
-                                        #(conj % (-clean-doc doc))) :bookmark/title)))
-
-  ;; Update the state in the remote repository.
-  (go (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
-                    {:edn-params (-clean-doc doc)
-                     :with-credentials? false
-                     :headers {"x-csrf-token" (session/get :csrf-token)}}))))
+    ;; Update the state in the remote repository.
+    (go (let [body (:body (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/"
+                                             (:bookmark/id @doc))
+                                           {:edn-params (-clean-doc doc)
+                                            :with-credentials? false
+                                            :headers {"x-csrf-token" (session/get :csrf-token)}})))]
+          ;; Replace the changed folders in the session.
+          (map #(session/put! (:bookmark/id %) %) (remove :bookmark/url body)))))
 
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
   (log/debugf "delete")
-  (go (let [body (:body (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/" (:bookmark/id @doc))
+  (go (let [body (:body (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/"
+                                              (:bookmark/id @doc))
                                          {:edn-params (-clean-doc doc)
                                           :with-credentials? false
-                                          :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            bookmark (first body)]
+                                          :headers {"x-csrf-token" (session/get :csrf-token)}})))]
         ;; Remove the bookmark from the session.
         (when (:folder? @doc) (session/remove! (:bookmark/id @doc)))
 
         ;; Replace the changed folders in the session.
-        (map #(session/put! (:bookmark/id %) %) (remove :bookmark/url body)))))
+        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body))))))
 
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]

@@ -39,6 +39,11 @@
                 (fn [p] (map (fn [b] (if (:bookmark/url b) b {:db/id (:db/id b)})) p)))
        bookmarks))
 
+(defn move-child-links "Move childs links into the bookmarks list."
+  [bookmarks]
+  (into [] (doall (reduce #(concat %1 (filter :bookmark/url (:bookmark/children %2)))
+                          bookmarks bookmarks))))
+
 (defn get-bookmark-id "Map db ids to bookmark ids."
   [bookmark]
   (if (get @bookmark-id-map (:db/id bookmark))
@@ -47,16 +52,17 @@
         (swap! bookmark-id-map #(assoc % (:db/id bookmark) @last-bookmark-id))
         @last-bookmark-id)))
 
-(defn replace-bookmark-id "Remove the db id, and replace old bookmark ids."
+(defn replace-bookmark-id "Remove the db id, and replace old bookmark ids with new ones."
   [bookmark]
   (assoc (dissoc bookmark :db/id :bookmark/id) :bookmark/id (get-bookmark-id bookmark)))
 
 (defn replace-bookmark-ids "Replace bookmark ids in all bookmarks."
   [bookmarks]
-  (mapv #(update (replace-bookmark-id %) :bookmark/children
-                 (fn [c] (doall (mapv (fn [b] (if (:bookmark/url b) (replace-bookmark-id b)
-                                                           (get-bookmark-id b))) c))))
-       bookmarks))
+  (mapv #(if-not (:bookmark/children %)
+           (replace-bookmark-id %)
+           (update (replace-bookmark-id %) :bookmark/children
+                   (fn [c] (doall (mapv get-bookmark-id c)))))
+        bookmarks))
 
 (defn replace-parent "Replace the parent id with a bookmark id."
   [bookmark]
@@ -68,34 +74,41 @@
 
 (defn replace-parents "Replace the parent id with a bookmark id in all bookmarks."
   [bookmarks]
-  (mapv #(if (:bookmark/children %) (update % :bookmark/children
-                                           (fn [c] (map (fn [b] (replace-parent b)) c))) %)
-       (map replace-parent bookmarks)))
+  (mapv #(if-not (:bookmark/children %) %
+           (update % :bookmark/children (fn [c] (map replace-parent c))))
+        (map replace-parent bookmarks)))
 
 (defn add-revision "Add a revision number to all bookmarks."
   [bookmarks]
-  (map #(if (:bookmark/url %) % (assoc % :bookmark/revision 1)) bookmarks))
+  (map #(assoc % :bookmark/revision 1) bookmarks))
 
 (defn count-child-links [bookmark bookmark-map]
-  (apply + (map #(if (:bookmark/url %) 1 (count-child-links (get bookmark-map %) bookmark-map))
+  (apply + (map #(if (:bookmark/url (get bookmark-map %)) 1
+                   (count-child-links (get bookmark-map %) bookmark-map))
                 (:bookmark/children bookmark))))
 
 (defn count-links "Count child links in a folder."
   [bookmarks]
   (let [bookmark-map (reduce #(assoc %1 (:bookmark/id %2) %2) {} bookmarks)]
-    (map #(assoc % :bookmark/link-count (count-child-links % bookmark-map)) bookmarks)))
+    (mapv #(if (:bookmark/url %) %
+             (assoc % :bookmark/link-count (count-child-links % bookmark-map))) bookmarks)))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder bookmark-map]
-  (let [[links folders] (map vec ((juxt filter remove) :bookmark/url (:bookmark/children folder)))]
+  (println "folder" folder)
+  (let [[links folders] (map vec ((juxt filter remove) #(:bookmark/url (get bookmark-map %))
+                                   (:bookmark/children folder)))
+        make-sort-key #(if (:bookmark/title (get bookmark-map %))
+                         (str/upper-case (:bookmark/title (get bookmark-map %))) "")]
     (update folder :bookmark/children
-            (fn [_] (into [] (concat (sort-by #(str/upper-case (:bookmark/title (get bookmark-map %)))
-                                              folders)
-                                     (sort-by #(str/upper-case (:bookmark/title %)) links)))))))
+            (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
+                                     (if (empty? links) links (sort-by make-sort-key links))))))))
+
 (defn sort-children "Sort all child bookmarks in a folder."
   [bookmarks]
   (let [bookmark-map (zipmap (map #(if (map? %) (:bookmark/id %) %) bookmarks) bookmarks)]
-    (mapv #(sort-folder-children % bookmark-map) bookmarks)))
+    (mapv #(if-not (:bookmark/children %) %
+             (sort-folder-children % bookmark-map)) bookmarks)))
 
 (defn rename-trash-folder "Rename the old trash folder."
   [bookmarks]
@@ -121,6 +134,7 @@
                     (promote-root)
                     (replace-_parent)
                     (normalize-children)
+                    (move-child-links)
                     (replace-bookmark-ids)
                     (replace-parents)
                     (add-revision)
@@ -130,7 +144,8 @@
                     (add-trash-folder)
                     )]
   (println (count bookmarks) @last-bookmark-id)
-  (println "Root" (:bookmark/id (first (remove :bookmark/parent-id bookmarks))))
+  (println (pr-str (first bookmarks)))
+  (println (pr-str (last bookmarks)))
   (wcar*
     (car/select 1)
     (car/flushdb)
@@ -139,4 +154,5 @@
     (dorun (map #(do
                    (println "Transferring" (:bookmark/id %) (:bookmark/title %))
                    (car/set (:bookmark/id %) %)) bookmarks))
-    (car/save)))
+    (car/save))
+  )

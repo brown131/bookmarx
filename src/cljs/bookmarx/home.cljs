@@ -32,8 +32,7 @@
   [bookmark-key]
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
-                bookmark/visits] :as bookmark} (if (map? bookmark-key) bookmark-key
-                                                                       (session/get bookmark-key))
+                bookmark/visits] :as bookmark} (session/get bookmark-key)
         week-ago-ticks (- (. js/Date (now)) ticks-in-week)]
     (if url
       [:div.bookmark_children {:key (str id "-key")}

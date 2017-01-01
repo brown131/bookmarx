@@ -13,11 +13,12 @@
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
-(defn -clean-doc "Remove temporary fields from the page document."
+(defn get-edn-params "Remove temporary fields from the page document."
   [doc]
-  (dissoc @doc :bookmark/children :orig-parent-id :folder? :add? :delete? :query? :rating :rating-clicked))
+  (dissoc (if (:folder? @doc) (dissoc @doc :bookmark/url) @doc)
+          :bookmark/children :orig-parent-id :folder? :add? :delete? :query? :rating :rating-clicked))
 
-(defn -get-active "Get the active bookmark id."
+(defn get-active-bookmark-id "Get the active bookmark id."
   [doc]
   (if (:bookmark/parent-id @doc)
     (:bookmark/parent-id @doc)
@@ -26,7 +27,7 @@
 (defn add-bookmark "Add a new bookmark."
   [doc]
   (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
-                                       {:edn-params (-clean-doc doc)
+                                       {:edn-params (get-edn-params doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
             bookmark (first (if (:bookmark/url @doc)
@@ -40,7 +41,7 @@
         ;; Replace the changed folders in the session.
         (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
 
-        ;; Update the revision number.
+        ;; Update the revision number in the session.
         (session/put! :revision (:revision body)))))
 
 (defn update-bookmark "Update a bookmark."
@@ -48,25 +49,31 @@
     ;; Update the state in the remote repository.
     (go (let [body (:body (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/"
                                              (:bookmark/id @doc))
-                                           {:edn-params (-clean-doc doc)
+                                           {:edn-params (get-edn-params doc)
                                             :with-credentials? false
                                             :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-          ;; Replace the changed folders in the session.
-          (map #(session/put! (:bookmark/id %) %) (remove :bookmark/url body)))))
+          ;; Replace the ancestor bookmarks in the session.
+          (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
+
+          ;; Update the revision number in the session.
+          (session/put! :revision (:revision body)))))
 
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
   (log/debugf "delete")
   (go (let [body (:body (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/"
                                               (:bookmark/id @doc))
-                                         {:edn-params (-clean-doc doc)
+                                         {:edn-params (get-edn-params doc)
                                           :with-credentials? false
                                           :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        ;; Remove the bookmark from the session.
-        (when (:folder? @doc) (session/remove! (:bookmark/id @doc)))
+        ;; Remove the bookmark and its progeny from the session.
+        (dorun (map session/remove! (:deleted-ids body)))
 
-        ;; Replace the changed folders in the session.
-        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body))))))
+        ;; Replace the ancestor bookmarks in the session.
+        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
+
+        ;; Update the revision number in the session.
+        (session/put! :revision (:revision body)))))
 
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]
@@ -118,7 +125,7 @@
                                (session/update-in! [:add :orig-parent-id] (fn [] (:bookmark/parent-id @doc)))
                                (session/put! :add @doc)))
                 :href (str (:prefix env) "/folder")}
-   (let [title (:bookmark/title (session/get (-get-active doc)))]
+   (let [title (:bookmark/title (session/get (get-active-bookmark-id doc)))]
      (if (= title "~Trash") "Trash" title))])
 
 (defn icon-selector "Render icon selection."

@@ -88,7 +88,9 @@
     (let [revision (Integer/parseInt rev)]
       {:status 200
        :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-       :body (pr-str {:bookmarks (into [] (filter #(> (:bookmark/revision %) revision) @bookmarks))
+       :body (pr-str {:bookmarks (into [] (vals (remove #(and (keyword? (key %))
+                                                              (<= (:bookmark/revision (val %)) revision))
+                                                        @bookmarks)))
                       :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))})})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
@@ -143,7 +145,8 @@
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
-  [{:keys [:bookmark/id :bookmark/url] :as bookmark}]
+  [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark}
+   orig-bookmark]
   ;; Change the fields in the bookmark.
   (swap! bookmarks update id
          #(merge % (if url
@@ -151,11 +154,11 @@
                                             :bookmark/icon :bookmark/icon-color])
                      (select-keys bookmark [:bookmark/title]))))
 
-  ;; Return a list with the id of the changed bookmark.
-  [id])
+  ;; Return a list with the id of the changed bookmark, and the parent if the title changed.
+  (if (= title (:bookmark/title orig-bookmark)) [id] [id parent-id]))
 
 (defn move-bookmark "Move a bookmark to a different folder."
-  [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark}]
+  [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark} orig-bookmark]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
         ancestor-ids
         (loop [ancestor-ids [parent-id id]]
@@ -204,16 +207,16 @@
     changed-ids))
 
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
-  [id bookmark]
+  [id {:keys [:bookmark/title :bookmark/parent-id] :as bookmark}]
   (try
     (infof "put-bookmark %s %s" id (pr-str bookmark))
-    (let [orig-bookmark (get @bookmarks (:bookmark/id bookmark))
-          changed-ids (if (= (:bookmark/parent-id bookmark) (:bookmark/parent-id orig-bookmark))
-                        (update-bookmark bookmark)
-                        (move-bookmark bookmark))]
+    (let [orig-bookmark (get @bookmarks id)
+          changed-ids (if (= parent-id (:bookmark/parent-id orig-bookmark))
+                        (update-bookmark bookmark orig-bookmark)
+                        (move-bookmark bookmark orig-bookmark))]
       ;; Re-sort the bookmarks in the parent if the title changed.
-      (when-not (= (:bookmark/title bookmark) (:bookmark/title orig-bookmark))
-        (sort-folder-children (get @bookmarks (:bookmark/parent-id bookmark))))
+      (when-not (= title (:bookmark/title orig-bookmark))
+        (swap! bookmarks update parent-id sort-folder-children))
 
       ;; Return the list of changed bookmarks.
       {:status 200
@@ -240,7 +243,6 @@
               (if-not children progeny-id
                 (cons progeny-id (map #(recur %) children)))))]
       ;; Remove deleted bookmarks from the cache.
-      ;(dorun (map #(swap! bookmarks (fn [b] (dissoc b %))) deleted-ids))
       (swap! bookmarks #(apply dissoc % deleted-ids))
 
       ;; Remove the bookmark from its parent.

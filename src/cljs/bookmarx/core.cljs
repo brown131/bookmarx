@@ -47,7 +47,7 @@
   (set-active! 1)
   (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!
-   {:nav-handler (fn [path] (secretary/dispatch! path))
-    :path-exists? (fn [path] (secretary/locate-route path))})
+   {:nav-handler #(secretary/dispatch! %)
+    :path-exists? #(secretary/locate-route %)})
   (accountant/dispatch-current!)
   (mount-root))

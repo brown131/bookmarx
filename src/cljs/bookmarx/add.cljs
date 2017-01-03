@@ -20,9 +20,7 @@
 
 (defn get-active-bookmark-id "Get the active bookmark id."
   [doc]
-  (if (:bookmark/parent-id @doc)
-    (:bookmark/parent-id @doc)
-    (get-active)))
+  (if (:bookmark/parent-id @doc) (:bookmark/parent-id @doc) (get-active)))
 
 (defn add-bookmark "Add a new bookmark."
   [doc]
@@ -113,8 +111,7 @@
 
 (defn rating-stars "Render stars for rating bookmarks."
   [doc]
-  [:div (for [i (range 1 6)]
-          [rating-star i doc])])
+  [:div (for [i (range 1 6)] [rating-star i doc])])
 
 (defn folder-selector "Render parent folder selection."
   [doc]

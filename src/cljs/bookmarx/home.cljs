@@ -47,17 +47,15 @@
        [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
        (when rating
          (for [i (range 0 rating)]
-           [:span.bookmark_link-icon-rating {:aria-hidden "true"
-                                             :key (str id "-rating" i "-key")}]))
+           [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
        (when (and created (> (.getTime (parse-date created)) week-ago-ticks))
          [:span.bookmark-new])
        (when (and last-visited (> (.getTime (parse-date last-visited)) week-ago-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
-         [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
-                 :key (str id "-arrow-key")
-                 :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
+         [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed")) :key (str id "-arrow-key")
+                 :on-click #(session/update-in! [id :open?] (complement open?))}]
          (if (= title "~Trash")
            [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
                    :aria-hidden "true" :style {:width "19px"}}]

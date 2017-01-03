@@ -33,8 +33,7 @@
 (defn load-bookmarks "Load bookmarks from the server and add them to session."
   ([] (load-bookmarks 0))
   ([revision]
-   (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks"
-                      (when (> revision 0) (str "/since/" revision)))
+   (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/0")
              response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))]
          (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
          (set-bookmarks! (get-in response [:body :bookmarks]))

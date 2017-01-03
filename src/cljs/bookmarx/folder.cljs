@@ -1,15 +1,10 @@
 (ns bookmarx.folder
-  (:require [reagent.core :as reagent :refer [atom]]
-            [reagent.session :as session]
-            [secretary.core :as secretary :include-macros true]
-            [taoensso.timbre :as log]
-            [goog.window :as gwin]
-            [cljs-http.client :as http]
+  (:require [reagent.session :as session]
             [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
 
 (defn bookmark-tree "Render a bookmark in a tree."
-  [{:keys [bookmark/id bookmark/title bookmark/rating bookmark/children]}]
+  [{:keys [bookmark/id bookmark/title bookmark/children]}]
   (let [add-id (session/get-in [:add :bookmark/id])
         add-parent-id (session/get-in [:add :bookmark/parent-id])]
     [:div.bookmark_children {:key (str id "-key")}

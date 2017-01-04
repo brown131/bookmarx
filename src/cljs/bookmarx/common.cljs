@@ -1,49 +1,14 @@
 (ns bookmarx.common
   (:require [clojure.string :as str]
-            [cljs.core.async :refer [<!]]
             [cljs.reader :refer [read-string]]
-            [cljs-http.client :as http]
             [reagent.cookies :as cookies]
-            [reagent.session :as session])
-  (:require-macros
-    [cljs.core.async.macros :refer [go]]))
+            [reagent.session :as session]))
 
 (def env (read-string js/env))
 
-(defn set-local-storage!
-  "Set `key' in browser's localStorage to `val`."
-  [key val]
-  (.setItem (.-localStorage js/window) key val))
-
-(defn get-local-storage
-  "Returns value of `key' from browser's localStorage."
-  [key]
-  (.getItem (.-localStorage js/window) key))
-
-(defn remove-local-storage!
-  "Remove the browser's localStorage value for the given `key`"
-  [key]
-  (.removeItem (.-localStorage js/window) key))
-
-(defn set-bookmarks! "Set session bookmarks from a list of bookmarks."
-  [bookmarks]
-  (let [bookmark-map (into {} (map #(vector (:bookmark/id %) %) bookmarks))]
-    (reset! session/state (merge bookmark-map @session/state))))
-
-(defn load-bookmarks "Load bookmarks from the server and add them to session."
-  ([] (load-bookmarks 0))
-  ([revision]
-   (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/0")
-             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))]
-         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
-         (set-bookmarks! (get-in response [:body :bookmarks]))
-         (session/put! :revision (get-in response [:body :revision]))))))
-
 (defn get-active "Get the active folder from the session or else a cookie."
   []
-  (if (session/get :active)
-    (session/get :active)
-    (cookies/get "active" 1)))
+  (if (session/get :active) (session/get :active) (cookies/get "active" 1)))
 
 (defn set-active! "Set the folder that is active in the session and as a cookie."
   [active]

@@ -72,7 +72,7 @@
 
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
-  [csrf-token]
+  []
   (try
     (info "get-bookmarks")
     {:status 200
@@ -82,22 +82,23 @@
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
-  [rev csrf-token]
+  [rev]
   (try
     (infof "get-revised-bookmarks %s" rev)
-    (let [revision (Integer/parseInt rev)]
+    (let [rev-num (Integer/parseInt rev)
+          bookmarks (into [] (vals (remove #(or (keyword? (key %))
+                                                (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
+          latest-revision (second (wcar* (car/get "latest-revision")))]
       {:status 200
        :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-       :body (pr-str {:bookmarks (into [] (vals (remove #(and (keyword? (key %))
-                                                              (<= (:bookmark/revision (val %)) revision))
-                                                        @bookmarks)))
-                      :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))})})
+       :body (pr-str {:bookmarks bookmarks :revision latest-revision})
+       :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-response "Save and build a response with the changed bookmarks."
   [changed-ids]
   ; Update the revision.
-  (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
+  (let [latest-revision (second (wcar* (car/get "latest-revision")))]
     ;; Set the revision in the changed bookmarks.
     (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
                 changed-ids))
@@ -277,9 +278,9 @@
   (GET "/search" [] loading-page)
 
   ;; API
-  (GET "/api/bookmarks/since/:rev" {{rev :rev} :route-params {csrf-token :csrf-token} :params}
-    [] (get-bookmarks-since rev csrf-token))
-  (GET "/api/bookmarks" {{csrf-token :csrf-token} :params} [] (get-bookmarks csrf-token))
+           ;{{rev :rev} :route-params}
+  (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
+  (GET "/api/bookmarks" [] (get-bookmarks))
   (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
   (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} [] (put-bookmark id bookmark))
   (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))

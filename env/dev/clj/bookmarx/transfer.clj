@@ -119,7 +119,7 @@
   [bookmarks]
   (-> bookmarks
       (conj {:bookmark/id -1 :bookmark/title "~Trash" :bookmark/parent-id 1 :bookmark/children []
-             :bookmark/link-count 0})
+             :bookmark/link-count 0 :bookmark/revision 1})
       (update-in [0 :bookmark/children] #(conj % -1))))
 
 (let [conn (d/connect "datomic:sql://bookmarx?jdbc:mysql://localhost:3306/datomic?user=datomic&password=datomic")

@@ -1,17 +1,21 @@
 (ns bookmarx.core
-  (:require [clojure.string :as str]
-            [reagent.core :as reagent :refer [atom]]
+  (:require [reagent.core :as reagent :refer [atom]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
+            [cljs.core.async :refer [<!]]
+            [cljs.reader :refer [read-string]]
+            [cljs-http.client :as http]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.common :refer [env load-bookmarks set-active!]]
+            [bookmarx.common :refer [env set-active!]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
-            [bookmarx.search :as search]))
+            [bookmarx.search :as search])
+  (:require-macros
+    [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
 
@@ -33,6 +37,22 @@
 (secretary/defroute (str (:prefix env) "/search") []
                     (session/put! :current-page #'search/search-page))
 
+(defn load-bookmarks "Request bookmarks from the server and set local state."
+  [revision]
+  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" revision)
+            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
+            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))]
+        ;; Set the session state.
+        (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
+        (session/put! :revision (get-in response [:body :revision]))
+        (reset! session/state (merge @session/state bookmarks))
+
+        ;; Store the response locally.
+        (cookies/set! "revision" (get-in response [:body :revision]) {:path (:prefix env)})
+        (when-not (= revision (get-in response [:body :revision]))
+          (.setItem (.-localStorage js/window) "bookmarks"
+                    (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))
+
 (defn current-page "Render the current page."
   []
   [:div [(session/get :current-page)]])
@@ -43,7 +63,11 @@
 
 (defn init! "Set the state for the application."
   []
-  (load-bookmarks)
+  (let [revision (js/parseInt (cookies/get "revision" 0))]
+    (when-not (zero? revision)
+      (reset! session/state (merge @session/state
+                                   (read-string (.getItem (.-localStorage js/window) "bookmarks")))))
+    (load-bookmarks revision))
   (set-active! 1)
   (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!

@@ -4,13 +4,15 @@
             [compojure.core :refer [GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
-            [bookmarx.middleware :refer [wrap-middleware]]
             [config.core :refer [env]]
             [taoensso.timbre :as timbre]
             [taoensso.carmine :as car]
             [ring.middleware.anti-forgery :refer :all]
             [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.edn :refer :all])
+            [ring.middleware.edn :refer :all]
+            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
+            [prone.middleware :refer [wrap-exceptions]]
+            [ring.middleware.reload :refer [wrap-reload]])
   (:gen-class))
 
 (timbre/refer-timbre)
@@ -278,7 +280,6 @@
   (GET "/search" [] loading-page)
 
   ;; API
-           ;{{rev :rev} :route-params}
   (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
   (GET "/api/bookmarks" [] (get-bookmarks))
   (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
@@ -287,6 +288,14 @@
 
   (resources "/")
   (not-found "Not Found"))
+
+(defn wrap-middleware [handler]
+  (let [wrapper (wrap-defaults handler site-defaults)]
+    (if (env :dev)
+      (-> wrapper
+          wrap-exceptions
+          wrap-reload)
+      wrapper)))
 
 (def app
   (-> #'routes

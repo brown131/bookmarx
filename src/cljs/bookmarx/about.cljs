@@ -16,8 +16,7 @@
     [:div "On the front-end it is using " [:a {:href "https://reagent-project.github.io/"} "Reagent"] 
     ", which is a ClojureScript wrapper for the " 
     [:a {:href "https://facebook.github.io/react/"} "React"] " user interface framework. The user interface style is the ubiquitous " [:a {:href "http://getbootstrap.com"} "Bootstrap"] 
-    " framework. On the back-end it is using " [:a {:href "http://www.datomic.com"} "Datomic"] 
-    ", backed by a " [:a {:href "http://www.mysql.com"} "MySql"] " database, for persistence."]
+    " framework. On the back-end it is using " [:a {:href "https://redis.io"} "Redis"] " for persistence."]
    [:p]
    [:div "The icons in this application are from " [:a {:href "http://glyphicons.com"} "Gylphicons"] " which are part of the Bootstrap framework."]
    [:p]

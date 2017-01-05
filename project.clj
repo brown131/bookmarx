@@ -13,6 +13,7 @@
                  [ring/ring-defaults "0.2.1"]
                  [ring-cors "0.1.7"]
                  [ring-server "0.4.0"]
+                 [prone "1.1.1"]
                  [fogus/ring-edn "0.3.0"]
                  [commons-codec "1.10"]
                  [com.taoensso/carmine "2.15.0"]
@@ -95,7 +96,6 @@
 
                    :dependencies [[ring/ring-mock "0.3.0"]
                                   [ring/ring-devel "1.5.0"]
-                                  [prone "1.1.1"]
                                   [figwheel-sidecar "0.5.8"]
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [com.cemerick/piggieback "0.2.1"]

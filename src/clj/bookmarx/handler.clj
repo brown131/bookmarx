@@ -88,19 +88,19 @@
   (try
     (infof "get-revised-bookmarks %s" rev)
     (let [rev-num (Integer/parseInt rev)
-          bookmarks (into [] (vals (remove #(or (keyword? (key %))
-                                                (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
+          changed-bookmarks
+          (into [] (vals (remove #(or (keyword? (key %))
+                                      (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
           latest-revision (second (wcar* (car/get "latest-revision")))]
       {:status 200
        :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-       :body (pr-str {:bookmarks bookmarks :revision latest-revision})
-       :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))})
+       :body (pr-str {:bookmarks changed-bookmarks :revision latest-revision})})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-response "Save and build a response with the changed bookmarks."
   [changed-ids]
   ; Update the revision.
-  (let [latest-revision (second (wcar* (car/get "latest-revision")))]
+  (let [latest-revision (Integer/parseInt (second (wcar* (car/incr "latest-revision"))))]
     ;; Set the revision in the changed bookmarks.
     (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
                 changed-ids))

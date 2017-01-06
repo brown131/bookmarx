@@ -38,18 +38,19 @@
                     (session/put! :current-page #'search/search-page))
 
 (defn load-bookmarks "Request bookmarks from the server and set local state."
-  [revision]
-  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" revision)
+  [rev]
+  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))]
+            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
+            revision (get-in response [:body :revision])]
         ;; Set the session state.
         (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
-        (session/put! :revision (get-in response [:body :revision]))
+        (session/put! :revision (js/parseInt revision))
         (reset! session/state (merge @session/state bookmarks))
 
         ;; Store the response locally.
-        (cookies/set! "revision" (get-in response [:body :revision]) {:path (:prefix env)})
-        (when-not (= revision (get-in response [:body :revision]))
+        (cookies/set! "revision" revision {:path (:prefix env)})
+        (when-not (= rev revision)
           (.setItem (.-localStorage js/window) "bookmarks"
                     (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))
 

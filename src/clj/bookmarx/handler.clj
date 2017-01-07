@@ -55,12 +55,6 @@
      (include-js "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js")
      (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
 
-(defn get-headers [params]
-  (let [headers {"content-type" "application/edn"}]
-    (if (= (:csrf-token params) "true")
-      (assoc headers "csrf-token" *anti-forgery-token*)
-      headers)))
-
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder]
   (let [[links folders] (map vec ((juxt filter remove) #(:bookmark/url (get @bookmarks %))
@@ -97,21 +91,21 @@
        :body (pr-str {:bookmarks changed-bookmarks :revision latest-revision})})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn get-response "Save and build a response with the changed bookmarks."
+(defn build-response "Save and build a response with the changed bookmarks."
   [changed-ids]
   ; Update the revision.
-  (let [latest-revision (Integer/parseInt (second (wcar* (car/incr "latest-revision"))))]
+  (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
     ;; Set the revision in the changed bookmarks.
     (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
                 changed-ids))
 
     ;; Save the changes.
     (wcar*
-      (dorun (map #(car/set % (get @bookmarks %)) changed-ids))
+      (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
       (car/bgsave))
 
     ;; Return the list of changed bookmarks and the latest revision.
-    {:bookmarks (mapv #(get @bookmarks %) changed-ids) :revision latest-revision}))
+    {:bookmarks (doall (mapv #(get @bookmarks %) changed-ids)) :revision latest-revision}))
 
 (defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [{:keys [:bookmark/url :bookmark/parent-id] :as bookmark}]
@@ -144,7 +138,7 @@
 
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (get-response changed-ids))})
+       :body (pr-str (build-response changed-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
@@ -224,7 +218,7 @@
       ;; Return the list of changed bookmarks.
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (get-response changed-ids))})
+       :body (pr-str (build-response changed-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
@@ -241,10 +235,8 @@
                 (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
           deleted-ids
           ;; Create a list with the bookmark and its progeny.
-          (loop [progeny-id bookmark-id]
-            (let [children (get-in @bookmarks [progeny-id :bookmark/children])]
-              (if-not children progeny-id
-                (cons progeny-id (map #(recur %) children)))))]
+          (doall (tree-seq #(:bookmark/children (get @bookmarks %))
+                           #(:bookmark/children (get @bookmarks %)) bookmark-id))]
       ;; Remove deleted bookmarks from the cache.
       (swap! bookmarks #(apply dissoc % deleted-ids))
 
@@ -259,14 +251,16 @@
 
       ;; Delete the bookmark and its progeny, and update its ancestors.
       (wcar*
+        (car/multi)
         (dorun (map car/del deleted-ids))
-        (dorun (map #(car/set % (get @bookmarks %)) changed-ids))
+        (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
+        (car/exec)
         (car/bgsave))
 
       ;; Return the list of changed folders.
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (assoc (get-response changed-ids) :deleted-ids (into [] deleted-ids)))})
+       :body (pr-str (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids)))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes

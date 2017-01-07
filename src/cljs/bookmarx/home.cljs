@@ -55,7 +55,7 @@
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}
          [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed")) :key (str id "-arrow-key")
-                 :on-click #(session/update-in! [id :open?] (complement open?))}]
+                 :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
          (if (= title "~Trash")
            [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
                    :aria-hidden "true" :style {:width "19px"}}]

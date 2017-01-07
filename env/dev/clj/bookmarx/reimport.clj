@@ -1,5 +1,5 @@
-;;;; Reload bookmarks from a bookmarks download file.
-(ns bookmarx.reload
+;;;; Reimport bookmarks from a bookmarks download file into Datomic.
+(ns bookmarx.reimport
   (:gen-class))
 
 ;; Load dependencies.
@@ -24,7 +24,7 @@
 (def conn (connect uri))
 @(transact conn schema-tx)
 
-(def download (flatten (read-string (slurp "resources/data/bookmarks.edn"))))
+(def download (flatten (read-string (slurp "resources/data/download.edn"))))
 
 (def root (first (filter #(nil? (:bookmark/parent %)) download)))
 

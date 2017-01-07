@@ -1,6 +1,5 @@
 (ns bookmarx.add
-  (:require [clojure.string :as str]
-            [reagent.core :refer [atom]]
+  (:require [reagent.core :refer [atom]]
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
@@ -75,8 +74,8 @@
 
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]
-  (swap! doc update-in [:orig-parent-id] #(:bookmark/parent-id @doc))
-  (swap! doc update-in [:bookmark/parent-id] #(- 0 1))
+  (swap! doc update :orig-parent-id #(:bookmark/parent-id @doc))
+  (swap! doc update :bookmark/parent-id #(- 1))
   (update-bookmark doc))
   
 (defn save-bookmark "Save a bookmark."

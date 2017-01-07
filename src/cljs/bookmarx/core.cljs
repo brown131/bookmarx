@@ -49,7 +49,8 @@
         (reset! session/state (merge @session/state bookmarks))
 
         ;; Store the response locally.
-        (cookies/set! "revision" revision {:path (:prefix env)})
+        (cookies/set! "revision" revision {:path (:prefix env)
+                                           :max-age (* (:cache-refresh-hours env) 60 60)})
         (when-not (= rev revision)
           (.setItem (.-localStorage js/window) "bookmarks"
                     (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))

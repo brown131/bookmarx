@@ -4,7 +4,7 @@
             [bookmarx.common :refer [env set-active! parse-date]]
             [bookmarx.header :as header]))
 
-(def ticks-in-week (* 1000 60 60 24 7))
+(def ticks-in-hour (* 1000 60 60))
 
 (defn -get-route "Gets the route to a menu in a tree by id."
   ([id] (-get-route id [id]))
@@ -33,7 +33,8 @@
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
                 bookmark/visits] :as bookmark} (session/get bookmark-key)
-        week-ago-ticks (- (. js/Date (now)) ticks-in-week)]
+        new-ticks (- (. js/Date (now)) (* (:new-hours env) ticks-in-hour))
+        last-visited-ticks (- (. js/Date (now)) (* (:last-visited-hours env) ticks-in-hour))]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon
@@ -48,9 +49,9 @@
        (when rating
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
-       (when (and created (> (.getTime (parse-date created)) week-ago-ticks))
+       (when (and created (> (.getTime (parse-date created)) new-ticks))
          [:span.bookmark-new])
-       (when (and last-visited (> (.getTime (parse-date last-visited)) week-ago-ticks))
+       (when (and last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
         [:div.bookmark_children {:key (str id "-key")}

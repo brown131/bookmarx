@@ -28,8 +28,6 @@
                  [cljs-http "0.1.40"]
                  [figwheel-sidecar "0.5.0"]]
 
-  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo" :creds :gpg}}
-
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-asset-minifier "0.2.7" :exclusions [org.clojure/clojure]]]
 

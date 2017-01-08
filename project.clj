@@ -13,6 +13,7 @@
                  [ring/ring-defaults "0.2.1"]
                  [ring-cors "0.1.7"]
                  [ring-server "0.4.0"]
+                 [ring-transit "0.1.6"]
                  [prone "1.1.1"]
                  [fogus/ring-edn "0.3.0"]
                  [commons-codec "1.10"]

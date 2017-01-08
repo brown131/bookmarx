@@ -11,8 +11,10 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.edn :refer :all]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [prone.middleware :refer [wrap-exceptions]]
-            [ring.middleware.reload :refer [wrap-reload]])
+            [ring.middleware.reload :refer [wrap-reload]]
+            [ring.middleware.transit :refer [wrap-transit-response]]
+            [prone.middleware :refer [wrap-exceptions]])
+  (:import (java.io ByteArrayOutputStream))
   (:gen-class))
 
 (timbre/refer-timbre)
@@ -73,8 +75,8 @@
     (info "get-bookmarks")
     {:status 200
      :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-     :body (pr-str {:bookmarks (into [] (vals (remove #(keyword? (key %)) @bookmarks)))
-                    :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))})}
+     :body {:bookmarks (into [] (vals (remove #(keyword? (key %)) @bookmarks)))
+            :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))}}
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
@@ -88,7 +90,7 @@
           latest-revision (second (wcar* (car/get "latest-revision")))]
       {:status 200
        :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-       :body (pr-str {:bookmarks changed-bookmarks :revision latest-revision})})
+       :body {:bookmarks changed-bookmarks :revision latest-revision}})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn build-response "Save and build a response with the changed bookmarks."
@@ -138,7 +140,7 @@
 
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (build-response changed-ids))})
+       :body (build-response changed-ids)})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
@@ -218,7 +220,7 @@
       ;; Return the list of changed bookmarks.
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (build-response changed-ids))})
+       :body (build-response changed-ids)})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
@@ -260,7 +262,7 @@
       ;; Return the list of changed folders.
       {:status 200
        :headers {"content-type" "application/edn"}
-       :body (pr-str (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids)))})
+       :body (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defroutes routes
@@ -295,6 +297,7 @@
   (-> #'routes
       wrap-middleware
       wrap-edn-params
+      wrap-transit-response
       (wrap-cors :access-control-allow-origin [#"https://www.browncross.com"
                                                #"http://localhost:3000"
                                                #"http://localhost:3449"]

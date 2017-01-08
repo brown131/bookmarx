@@ -1,7 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.common :refer [path set-active! parse-date]]
+            [bookmarx.common :refer [env path set-active! parse-date]]
             [bookmarx.header :as header]))
 
 (def ticks-in-hour (* 1000 60 60))

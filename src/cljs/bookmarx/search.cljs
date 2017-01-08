@@ -4,7 +4,7 @@
             [accountant.core :as accountant]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
-            [bookmarx.common :refer [path]]
+            [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
     
 (defn search-bookmarks "Search the bookmarks for the given text."
@@ -30,7 +30,7 @@
       [:a {:class (str "glyphicon " icon) :aria-hidden "true"
            :style {:color (if icon-color icon-color "Black")}
            :key (str id "-icon-key") :on-click #(session/put! :add bookmark)
-           :href (path "/add")}]
+           :href (str (:prefix env) "/add")}]
       [:div.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")}])
     [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
     (when rating
@@ -46,4 +46,4 @@
    (doall (map #(bookmark-link %)
                (search-bookmarks (session/get :search)
                                  (:bookmark/children (session/get 1)))))
-   [:div [:a {:href (path "/")} "go to the home page"]]])
+   [:div [:a {:href (str (:prefix env) "/")} "go to the home page"]]])

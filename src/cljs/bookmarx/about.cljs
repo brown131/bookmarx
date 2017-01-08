@@ -1,6 +1,6 @@
 (ns bookmarx.about
   (:require [reagent.session :as session]
-            [bookmarx.common :refer [path]]
+            [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
 
 (defn about-page "Render the About page."
@@ -20,5 +20,5 @@
    [:p]
    [:div "The icons in this application are from " [:a {:href "http://glyphicons.com"} "Gylphicons"] " which are part of the Bootstrap framework."]
    [:p]
-   [:div [:a {:href (path "/")} "go to the home page"]]])
+   [:div [:a {:href (str (:prefix env) "/")} "go to the home page"]]])
 

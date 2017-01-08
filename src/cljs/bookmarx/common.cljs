@@ -6,14 +6,6 @@
 
 (def env (read-string js/env))
 
-(defmacro path "Create a url with the path from the environment."
-  [& p]
-  `(str (:prefix bookmarx.common/env) ~@p))
-
-(defmacro server-path "Create a url to the service with the path from the environment."
-  [& p]
-  `(str (:host-url bookmarx.common/env) (:prefix bookmarx.common/env) ~@p))
-
 (defn get-active "Get the active folder from the session or else a cookie."
   []
   (if (session/get :active) (session/get :active) (cookies/get "active" 1)))

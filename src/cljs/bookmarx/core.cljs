@@ -9,7 +9,7 @@
             [cljs-http.client :as http]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.common :refer [env path server-path set-active!]]
+            [bookmarx.common :refer [env set-active!]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
@@ -19,27 +19,27 @@
 
 (enable-console-print!)
 
-(secretary/defroute (path "/") []
+(secretary/defroute (str (:prefix env) "/") []
                     (session/put! :current-page #'home/home-page))
 
-(secretary/defroute (path "/about") []
+(secretary/defroute (str (:prefix env) "/about") []
                     (session/put! :current-page #'about/about-page))
 
-(secretary/defroute (path "/add") []
+(secretary/defroute (str (:prefix env) "/add") []
                     (session/put! :current-page #'add/add-page))
 
-(secretary/defroute (path "/folder") []
+(secretary/defroute (str (:prefix env) "/folder") []
                     (session/put! :current-page #'folder/folder-page))
 
-(secretary/defroute (path "/icon") []
+(secretary/defroute (str (:prefix env) "/icon") []
                     (session/put! :current-page #'icon/icon-page))
 
-(secretary/defroute (path "/search") []
+(secretary/defroute (str (:prefix env) "/search") []
                     (session/put! :current-page #'search/search-page))
 
 (defn load-bookmarks "Request bookmarks from the server and set local state."
   [rev]
-  (go (let [url (server-path "/api/bookmarks/since/" rev)
+  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]

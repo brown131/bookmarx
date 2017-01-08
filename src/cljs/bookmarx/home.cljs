@@ -1,7 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.common :refer [env set-active! parse-date]]
+            [bookmarx.common :refer [path set-active! parse-date]]
             [bookmarx.header :as header]))
 
 (def ticks-in-hour (* 1000 60 60))
@@ -41,10 +41,10 @@
          [:a {:class (str "glyphicon " icon) :aria-hidden "true"
               :style {:color (if icon-color icon-color "Black") :width "19px"}
              :key (str id "-icon-key") :on-click #(session/put! :add bookmark)
-             :href (str (:prefix env) "/add")}]
+             :href (path "/add")}]
          [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
                                  :on-click #(session/put! :add bookmark)
-                                 :href (str (:prefix env) "/add")}])
+                                 :href (path "/add")}])
        [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
        (when rating
          (for [i (range 0 rating)]
@@ -61,7 +61,7 @@
            [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
                    :aria-hidden "true" :style {:width "19px"}}]
            [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
-                :aria-hidden "true" :key (str id "-icon-key") :href (str (:prefix env) "/add")
+                :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
                 :on-click #(session/put! :add (assoc bookmark :folder? true))}])
          [:a.bookmark {:key (str id "-title-key") :on-click #(set-active! id)}
           (if (= title "~Trash") "Trash" title)]

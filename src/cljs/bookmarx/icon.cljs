@@ -1,8 +1,7 @@
 (ns bookmarx.icon
-   (:require [reagent.core :as reagent :refer [atom]]
+   (:require [reagent.core :refer [atom]]
              [reagent.session :as session]
-             [taoensso.timbre :as log]
-             [bookmarx.common :refer [env]]
+             [bookmarx.common :refer [path]]
              [bookmarx.header :as header]))
 
 (def icons ["glyphicon-asterisk",
@@ -426,7 +425,7 @@
                         (when-not (= icon (session/get-in [:add :bookmark/icon])) 
                           " bookmark_link-icon"))
             :on-click #(session/update-in! [:add :bookmark/icon] (fn [_] icon))
-            :key (str "a-" icon) :href (str (:prefix env) "/add") :aria-hidden true}]])
+            :key (str "a-" icon) :href (path "/add") :aria-hidden true}]])
 
 (defn icon-table "Render a table of icons"
   [icons]
@@ -460,4 +459,4 @@
    [header/header]
    [icon-table icons]
    [color-select colors]
-   [:div [:a {:href (str (:prefix env) "/add")} "Cancel"]]])
+   [:div [:a {:href (path "/add")} "Cancel"]]])

@@ -7,7 +7,7 @@
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
-            [bookmarx.common :refer [env get-active sort-folder-children]]
+            [bookmarx.common :refer [path server-path get-active sort-folder-children]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -23,7 +23,7 @@
 
 (defn add-bookmark "Add a new bookmark."
   [doc]
-  (go (let [body (:body (<! (http/post (str (:host-url env) (:prefix env) "/api/bookmarks")
+  (go (let [body (:body (<! (http/post (server-path "/api/bookmarks")
                                        {:edn-params (get-edn-params doc)
                                         :with-credentials? false
                                         :headers {"x-csrf-token" (session/get :csrf-token)}})))
@@ -44,7 +44,7 @@
 (defn update-bookmark "Update a bookmark."
   [doc]
     ;; Update the state in the remote repository.
-    (go (let [body (:body (<! (http/put (str (:host-url env) (:prefix env) "/api/bookmarks/"
+    (go (let [body (:body (<! (http/put (server-path"/api/bookmarks/"
                                              (:bookmark/id @doc))
                                            {:edn-params (get-edn-params doc)
                                             :with-credentials? false
@@ -58,7 +58,7 @@
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
   (log/debugf "delete")
-  (go (let [body (:body (<! (http/delete (str (:host-url env) (:prefix env) "/api/bookmarks/"
+  (go (let [body (:body (<! (http/delete (server-path "/api/bookmarks/"
                                               (:bookmark/id @doc))
                                          {:edn-params (get-edn-params doc)
                                           :with-credentials? false
@@ -87,7 +87,7 @@
                           (trash-bookmark doc))
         :else (update-bookmark doc))
 
-  (accountant/navigate! (str (:prefix env) "/"))
+  (accountant/navigate! (path "/"))
   (when (:query? @doc)
     (.setTimeout js/window #(.close js/window) 1000)))
 
@@ -120,7 +120,7 @@
                              (if (session/get :add)
                                (session/update-in! [:add :orig-parent-id] (fn [] (:bookmark/parent-id @doc)))
                                (session/put! :add @doc)))
-                :href (str (:prefix env) "/folder")}
+                :href (path"/folder")}
    (let [title (:bookmark/title (session/get (get-active-bookmark-id doc)))]
      (if (= title "~Trash") "Trash" title))])
 
@@ -129,7 +129,7 @@
   (let [{:keys [:bookmark/icon :bookmark/icon-color]} @doc] 
     [:a {:class (str "bookmark_link-icon glyphicon " icon) 
          :style {:color (if icon-color icon-color "Black")}
-         :href (str (:prefix env) "/icon")}]))
+         :href (path "/icon")}]))
 
 (defn row
   [label input]

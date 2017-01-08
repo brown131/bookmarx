@@ -39,7 +39,7 @@
 
 (defn load-bookmarks "Request bookmarks from the server and set local state."
   [rev]
-  (go (time (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
+  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]
@@ -53,7 +53,7 @@
                                            :max-age (* (:cache-refresh-hours env) 60 60)})
         (when-not (= rev revision)
           (.setItem (.-localStorage js/window) "bookmarks"
-                    (pr-str (into {} (remove #(keyword? (key %)) @session/state)))))))))
+                    (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))
 
 (defn current-page "Render the current page."
   []

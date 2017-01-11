@@ -1,25 +1,25 @@
 (ns bookmarx.search
   (:require [clojure.string :as str]
             [reagent.session :as session]
-            [accountant.core :as accountant]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
             [bookmarx.common :refer [env]]
             [bookmarx.header :as header]))
     
 (defn search-bookmarks "Search the bookmarks for the given text."
-  ([text bookmarks] (search-bookmarks text bookmarks []))
-  ([text bookmarks matches]
+  ([text bookmark-ids] (search-bookmarks text bookmark-ids []))
+  ([text bookmark-ids matches]
    (cond (nil? text) []
-         (empty? bookmarks) matches
-         (nil? (:bookmark/url (first bookmarks)))
-         (recur text (rest bookmarks)
-                (search-bookmarks text (-> bookmarks first :bookmark/id session/get :bookmark/children)
-                                  matches))
-         (or (str/index-of (str/upper-case (:bookmark/title (first bookmarks))) (str/upper-case text))
-             (str/index-of (str/upper-case (:bookmark/url (first bookmarks))) (str/upper-case text)))
-         (recur text (rest bookmarks) (conj matches (first bookmarks)))
-         :else (recur text (rest bookmarks) matches))))
+         (empty? bookmark-ids) matches
+         (nil? (:bookmark/url (session/get (first bookmark-ids))))
+         (recur text (rest bookmark-ids)
+                (search-bookmarks text (-> bookmark-ids first session/get :bookmark/children) matches))
+         (or (str/index-of (str/lower-case (:bookmark/title (session/get (first bookmark-ids))))
+                           (str/lower-case text))
+             (str/index-of (str/lower-case (:bookmark/url (session/get (first bookmark-ids))))
+                           (str/lower-case text)))
+         (recur text (rest bookmark-ids) (conj matches (first bookmark-ids)))
+         :else (recur text (rest bookmark-ids) matches))))
 
 (defn bookmark-link "Render a bookmark link."
   [bookmark]
@@ -43,7 +43,7 @@
   [:div.col-sm-12
    [header/header]
    [:div.breadcrumbs "Search: \"" (session/get :search) "\"" ]
-   (doall (map #(bookmark-link %)
+   (doall (map #(bookmark-link (session/get %))
                (search-bookmarks (session/get :search)
                                  (:bookmark/children (session/get 1)))))
    [:div [:a {:href (str (:prefix env) "/")} "go to the home page"]]])

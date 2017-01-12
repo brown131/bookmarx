@@ -15,6 +15,7 @@
                  [ring-server "0.4.0"]
                  [ring-transit "0.1.6"]
                  [prone "1.1.1"]
+                 [buddy "1.2.0"]
                  [fogus/ring-edn "0.3.0"]
                  [commons-codec "1.10"]
                  [com.taoensso/carmine "2.15.0"]

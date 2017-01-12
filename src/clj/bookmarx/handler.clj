@@ -1,61 +1,18 @@
 (ns bookmarx.handler
   (:require [clojure.set :refer [difference]]
             [clojure.string :as str]
-            [compojure.core :refer [GET POST PUT DELETE defroutes]]
-            [compojure.route :refer [not-found resources]]
-            [hiccup.page :refer [include-js include-css html5]]
-            [config.core :refer [env]]
             [taoensso.timbre :as timbre]
-            [taoensso.carmine :as car]
             [ring.middleware.anti-forgery :refer :all]
-            [ring.middleware.cors :refer [wrap-cors]]
-            [ring.middleware.edn :refer :all]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [ring.middleware.reload :refer [wrap-reload]]
-            [ring.middleware.transit :refer [wrap-transit-response]]
-            [prone.middleware :refer [wrap-exceptions]])
-  (:import (java.io ByteArrayOutputStream))
-  (:gen-class))
+            [bookmarx.db :refer :all]
+            [bookmarx.pages :refer :all]))
 
 (timbre/refer-timbre)
 
-;; Setup redis connection.
-(defonce bookmarx-conn {:pool {} :spec {}})
-(defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select 1) ~@body))
-
-;; Cache
-(def bookmarks (atom (let [keys (remove symbol? (map read-string (second (wcar* (car/keys "*")))))
-                           values (second (wcar* (apply car/mget keys)))]
-                       (zipmap keys values))))
-
-(defn head []
-  [:head
-   [:title "Bookmarx"]
-   [:meta {:charset "utf-8"}]
-   [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-   [:link {:rel "icon" :type "image/png" :href "favicon.ico"}]
-   (include-css (if (env :dev) "css/site.css" "css/site.min.css"))
-   (include-css "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css")])
-
-(def loading-page
-  (html5
-    (head)
-    [:body {:class "body-container"}
-     [:div#app]
-     [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
-     (include-js "js/app.js")
-     (include-js "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js")
-     (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
-
-(def cards-page
-  (html5
-    (head)
-    [:body
-     [:div#app]
-     [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
-     (include-js "js/app_devcards.js")
-     (include-js "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js")
-     (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
+(defn build-response "Build a response with the changed bookmarks."
+  [changed-ids]
+  (let [latest-revision (get-latest-revision)]
+    ;; Return the list of changed bookmarks and the latest revision.
+    {:bookmarks (doall (mapv #(get @bookmarks %) changed-ids)) :revision latest-revision}))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder]
@@ -76,7 +33,7 @@
     {:status 200
      :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
      :body {:bookmarks (into [] (vals (remove #(keyword? (key %)) @bookmarks)))
-            :revision (Integer/parseInt (second (wcar* (car/get "latest-revision"))))}}
+            :revision (Integer/parseInt (get-latest-revision))}}
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
@@ -87,33 +44,17 @@
           changed-bookmarks
           (into [] (vals (remove #(or (keyword? (key %))
                                       (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
-          latest-revision (second (wcar* (car/get "latest-revision")))]
+          latest-revision (get-latest-revision)]
       {:status 200
        :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
        :body {:bookmarks changed-bookmarks :revision latest-revision}})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn build-response "Save and build a response with the changed bookmarks."
-  [changed-ids]
-  ; Update the revision.
-  (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
-    ;; Set the revision in the changed bookmarks.
-    (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
-                changed-ids))
-
-    ;; Save the changes.
-    (wcar*
-      (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
-      (car/bgsave))
-
-    ;; Return the list of changed bookmarks and the latest revision.
-    {:bookmarks (doall (mapv #(get @bookmarks %) changed-ids)) :revision latest-revision}))
-
 (defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [{:keys [:bookmark/url :bookmark/parent-id] :as bookmark}]
   (try
     (infof "post-bookmark %s" (pr-str bookmark))
-    (let [bookmark-id (second (wcar* (car/incr "last-bookmark-id")))
+    (let [bookmark-id (inc-last-bookmark-id!)
           now (java.util.Date.)
           new-bookmark (assoc (if url bookmark (assoc bookmark :bookmark/children []
                                                                :bookmark/link-count 0))
@@ -137,6 +78,9 @@
 
       ;; Re-sort the bookmarks in the parent.
       (swap! bookmarks update parent-id sort-folder-children)
+
+      ;; Persist the changes.
+      (save-bookmarks! changed-ids)
 
       {:status 200
        :headers {"content-type" "application/edn"}
@@ -217,6 +161,9 @@
       (when-not (= title (:bookmark/title orig-bookmark))
         (swap! bookmarks update parent-id sort-folder-children))
 
+      ;; Persist the changes.
+      (save-bookmarks! changed-ids)
+
       ;; Return the list of changed bookmarks.
       {:status 200
        :headers {"content-type" "application/edn"}
@@ -251,54 +198,14 @@
                      (swap! bookmarks update-in [% :bookmark/link-count]
                             (fn [b] (if link-count (- b link-count) (dec b))))) changed-ids))
 
-      ;; Delete the bookmark and its progeny, and update its ancestors.
-      (wcar*
-        (car/multi)
-        (dorun (map car/del deleted-ids))
-        (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
-        (car/exec)
-        (car/bgsave))
+      ;; Persist the changes.
+      (save-bookmarks! changed-ids)
+
+      ;; Delete the bookmark and its progeny.
+      (delete-bookmarks! deleted-ids)
 
       ;; Return the list of changed folders.
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
-
-(defroutes routes
-  ;; Views
-  (GET "/" [] loading-page)
-  (GET "/add" [] loading-page)
-  (GET "/about" [] loading-page)
-  (GET "/cards" [] cards-page)
-  (GET "/folder" [] loading-page)
-  (GET "/icon" [] loading-page)
-  (GET "/search" [] loading-page)
-
-  ;; API
-  (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
-  (GET "/api/bookmarks" [] (get-bookmarks))
-  (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
-  (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} [] (put-bookmark id bookmark))
-  (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
-
-  (resources "/")
-  (not-found "Not Found"))
-
-(defn wrap-middleware [handler]
-  (let [wrapper (wrap-defaults handler site-defaults)]
-    (if (env :dev)
-      (-> wrapper
-          wrap-exceptions
-          wrap-reload)
-      wrapper)))
-
-(def app
-  (-> #'routes
-      wrap-middleware
-      wrap-edn-params
-      wrap-transit-response
-      (wrap-cors :access-control-allow-origin [#"https://www.browncross.com"
-                                               #"http://localhost:3000"
-                                               #"http://localhost:3449"]
-                 :access-control-allow-methods [:get :post :put :delete])))

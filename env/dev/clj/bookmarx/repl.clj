@@ -1,5 +1,5 @@
 (ns bookmarx.repl
-  (:use bookmarx.handler
+  (:use bookmarx.server
         ring.server.standalone
         [ring.middleware file-info file]))
 

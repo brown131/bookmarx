@@ -15,6 +15,7 @@
                  [ring-server "0.4.0"]
                  [ring-transit "0.1.6"]
                  [prone "1.1.1"]
+                 [com.fasterxml.jackson.core/jackson-core "2.8.6"]
                  [buddy "1.2.0"]
                  [fogus/ring-edn "0.3.0"]
                  [commons-codec "1.10"]

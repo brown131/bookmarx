@@ -3,8 +3,7 @@
             [clojure.string :as str]
             [taoensso.timbre :as timbre]
             [ring.middleware.anti-forgery :refer :all]
-            [bookmarx.db :refer :all]
-            [bookmarx.pages :refer :all]))
+            [bookmarx.ds :refer :all]))
 
 (timbre/refer-timbre)
 
@@ -92,10 +91,9 @@
    orig-bookmark]
   ;; Change the fields in the bookmark.
   (swap! bookmarks update id
-         #(merge % (if url
-                     (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
-                                            :bookmark/icon :bookmark/icon-color])
-                     (select-keys bookmark [:bookmark/title]))))
+         #(merge % (if url (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+                                                  :bookmark/icon :bookmark/icon-color])
+                           (select-keys bookmark [:bookmark/title]))))
 
   ;; Return a list with the id of the changed bookmark, and the parent if the title changed.
   (if (= title (:bookmark/title orig-bookmark)) [id] [id parent-id]))
@@ -103,13 +101,13 @@
 (defn move-bookmark "Move a bookmark to a different folder."
   [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark} orig-bookmark]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
-        ancestor-ids
+        ancestor-ids  ; Find the ancestors from the new parent.
         (loop [ancestor-ids [parent-id id]]
           (let [ancestor (get @bookmarks (first ancestor-ids))]
             (if-not (:bookmark/parent-id ancestor)
               (reverse ancestor-ids)
               (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
-        orig-ancestor-ids
+        orig-ancestor-ids  ; Find the ancestors from the original parent.
         (loop [ancestor-ids [orig-parent-id]]
           (let [ancestor (get @bookmarks (first ancestor-ids))]
             (if-not (:bookmark/parent-id ancestor)

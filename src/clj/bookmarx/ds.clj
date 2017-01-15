@@ -1,9 +1,12 @@
-(ns bookmarx.db
-  (:require [taoensso.carmine :as car]))
+(ns bookmarx.ds
+  (:require [buddy.hashers :as hs]
+            [config.core :refer [env]]
+            [taoensso.carmine :as car]))
 
 ;; Setup redis connection.
 (defonce bookmarx-conn {:pool {} :spec {}})
-(defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select 1) ~@body))
+(def db (atom (env :database)))
+(defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select @db) ~@body))
 
 ;; Cache
 (def bookmarks (atom (let [keys (remove symbol? (map read-string (second (wcar* (car/keys "*")))))
@@ -14,9 +17,12 @@
 
 (defn inc-last-bookmark-id! [] (second (wcar* (car/incr "last-bookmark-id"))))
 
-(defn save-user! [user]
+(defn get-password "Gets the password hash." [] (second (wcar* (car/get "password"))))
+
+(defn save-password! "Save the encrypted password."
+  [password]
   (wcar*
-    (car/set "user" user)
+    (car/set "password" (hs/derive password))
     (car/bgsave)))
 
 (defn save-bookmarks! "Save changed bookmarks in the data store."

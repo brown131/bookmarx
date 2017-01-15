@@ -1,12 +1,12 @@
 (ns bookmarx.add
-  (:require [reagent.core :refer [atom]]
+  (:require [cljs.core.async :refer [<!]]
+            [reagent.core :refer [atom]]
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
             [bookmarx.common :refer [path server-path get-active sort-folder-children]]
             [bookmarx.header :as header])
   (:require-macros

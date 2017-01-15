@@ -14,7 +14,7 @@
 (def bookmarx-conn {:pool {} :spec {}})
 (defmacro wcar* [& body] `(car/wcar bookmarx-conn ~@body))
 
-(def bookmarks (read-string (slurp "resources/data/bookmarks.edn")))
+(def bookmarks (read-string (slurp "resources/bookmarks.edn")))
 
 (println "Reloading revision" (:revision bookmarks) "of bookmarks")
 (wcar*

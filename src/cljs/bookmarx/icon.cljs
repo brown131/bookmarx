@@ -1,6 +1,5 @@
 (ns bookmarx.icon
-   (:require [reagent.core :as reagent :refer [atom]]
-             [reagent.session :as session]
+   (:require [reagent.session :as session]
              [taoensso.timbre :as log]
              [bookmarx.common :refer [env]]
              [bookmarx.header :as header]))

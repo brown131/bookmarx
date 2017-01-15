@@ -13,6 +13,7 @@
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
+            [bookmarx.login :as login]
             [bookmarx.search :as search])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
@@ -33,6 +34,9 @@
 
 (secretary/defroute (str (:prefix env) "/icon") []
                     (session/put! :current-page #'icon/icon-page))
+
+(secretary/defroute (str (:prefix env) "/login") []
+                    (session/put! :current-page #'login/login-page))
 
 (secretary/defroute (str (:prefix env) "/search") []
                     (session/put! :current-page #'search/search-page))

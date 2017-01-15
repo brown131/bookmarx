@@ -10,6 +10,7 @@
             [ring.middleware.reload :refer [wrap-reload]]
             [ring.middleware.transit :refer [wrap-transit-response]]
             [prone.middleware :refer [wrap-exceptions]]
+            [bookmarx.auth :refer :all]
             [bookmarx.handler :refer :all]
             [bookmarx.pages :refer :all])
   (:gen-class))
@@ -18,7 +19,8 @@
 
 (defroutes routes
            ;; Authentication
-
+           (GET "/login" [] loading-page)
+           (POST "/api/auth-token" {credentials :edn-params} (get-auth-token credentials))
 
            ;; Views
            (GET "/" [] loading-page)
@@ -33,7 +35,8 @@
            (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
            (GET "/api/bookmarks" [] (get-bookmarks))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
-           (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} [] (put-bookmark id bookmark))
+           (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
+             [] (put-bookmark id bookmark))
            (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
 
            (resources "/")

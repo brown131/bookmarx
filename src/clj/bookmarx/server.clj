@@ -4,6 +4,7 @@
             [config.core :refer [env]]
             [taoensso.timbre :as timbre]
             [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.edn :refer :all]
@@ -17,22 +18,26 @@
 
 (timbre/refer-timbre)
 
-(defroutes routes
+(defroutes public-routes
            ;; Authentication
-           (GET "/login" [] loading-page)
-           (POST "/api/auth-token" {credentials :edn-params} (get-auth-token credentials))
+           (GET "/login" [] page-handler)
+           (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
+           (POST "/login" {credentials :edn-params} (create-auth-token credentials)))
 
+(defroutes secured-routes
            ;; Views
-           (GET "/" [] loading-page)
-           (GET "/add" [] loading-page)
-           (GET "/about" [] loading-page)
+           (GET "/" [] page-handler)
+           (GET "/add" [] page-handler)
+           (GET "/about" [] page-handler)
+           (GET "/folder" [] page-handler)
+           (GET "/icon" [] page-handler)
+           (GET "/logout" [] page-handler)
+           (GET "/search" [] page-handler)
+
            (GET "/cards" [] cards-page)
-           (GET "/folder" [] loading-page)
-           (GET "/icon" [] loading-page)
-           (GET "/search" [] loading-page)
 
            ;; REST API
-           (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
+
            (GET "/api/bookmarks" [] (get-bookmarks))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
@@ -41,6 +46,13 @@
 
            (resources "/")
            (not-found "Not Found"))
+
+(defroutes app-routes
+           (-> public-routes
+               wrap-auth-token)
+           (-> secured-routes
+               wrap-authentication
+               wrap-auth-token))
 
 (defn wrap-middleware [handler]
   (let [wrapper (wrap-defaults handler site-defaults)]
@@ -51,7 +63,8 @@
       wrapper)))
 
 (def app
-  (-> #'routes
+  (-> #'app-routes
+      wrap-anti-forgery
       wrap-middleware
       wrap-edn-params
       wrap-transit-response

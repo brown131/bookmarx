@@ -29,6 +29,7 @@
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7" :exclusions [org.clojure/tools.reader]]
                  [cljs-http "0.1.40"]
+                 [clj-time "0.13.0"]
                  [figwheel-sidecar "0.5.0"]]
 
   :plugins [[lein-cljsbuild "1.1.1"]

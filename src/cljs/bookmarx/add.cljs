@@ -7,7 +7,7 @@
             [taoensso.timbre :as log]
             [cemerick.url :refer [url]]
             [cljs-http.client :as http]
-            [bookmarx.common :refer [path server-path get-active sort-folder-children]]
+            [bookmarx.common :refer [path server-path get-cookie set-cookie! sort-folder-children]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -19,7 +19,7 @@
 
 (defn get-active-bookmark-id "Get the active bookmark id."
   [doc]
-  (if (:bookmark/parent-id @doc) (:bookmark/parent-id @doc) (get-active)))
+  (if (:bookmark/parent-id @doc) (:bookmark/parent-id @doc) (get-cookie :active)))
 
 (defn add-bookmark "Add a new bookmark."
   [doc]
@@ -120,7 +120,7 @@
                              (if (session/get :add)
                                (session/update-in! [:add :orig-parent-id] (fn [] (:bookmark/parent-id @doc)))
                                (session/put! :add @doc)))
-                :href (path"/folder")}
+                :href (path "/folder")}
    (let [title (:bookmark/title (session/get (get-active-bookmark-id doc)))]
      (if (= title "~Trash") "Trash" title))])
 
@@ -159,7 +159,7 @@
   []
   (atom (assoc (if (session/get :add)
                  (session/get :add)
-                 (let [parent-id (get-active)
+                 (let [parent-id (get-cookie :active)
                        q (:query (url (-> js/window .-location .-href)))]
                    (merge {:add? true :bookmark/parent-id parent-id :orig-parent-id parent-id}
                           (when q {:add? true :query? true :bookmark/title (get q "title")

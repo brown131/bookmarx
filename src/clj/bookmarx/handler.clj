@@ -81,7 +81,7 @@
       ;; Persist the changes.
       (save-bookmarks! changed-ids)
 
-      {:status 200
+      {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
     (catch Exception e (errorf "Error %s" (.toString e)))))
@@ -163,7 +163,7 @@
       (save-bookmarks! changed-ids)
 
       ;; Return the list of changed bookmarks.
-      {:status 200
+      {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
     (catch Exception e (errorf "Error %s" (.toString e)))))

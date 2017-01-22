@@ -1,15 +1,14 @@
 (ns bookmarx.core
-  (:require [reagent.core :as reagent :refer [atom]]
+  (:require [reagent.core :as reagent]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
-            [cljs.core.async :refer [<!]]
+            [cemerick.url :as url]
             [cljs.reader :refer [read-string]]
-            [cljs-http.client :as http]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.common :refer [env set-active!]]
+            [bookmarx.common :refer [path set-cookie! get-cookie load-bookmarks]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
@@ -20,44 +19,16 @@
 
 (enable-console-print!)
 
-(secretary/defroute (str (:prefix env) "/") []
-                    (session/put! :current-page #'home/home-page))
+(defn route [res-path page]
+  (secretary/defroute (path res-path) [] (session/put! :current-page page)))
 
-(secretary/defroute (str (:prefix env) "/about") []
-                    (session/put! :current-page #'about/about-page))
-
-(secretary/defroute (str (:prefix env) "/add") []
-                    (session/put! :current-page #'add/add-page))
-
-(secretary/defroute (str (:prefix env) "/folder") []
-                    (session/put! :current-page #'folder/folder-page))
-
-(secretary/defroute (str (:prefix env) "/icon") []
-                    (session/put! :current-page #'icon/icon-page))
-
-(secretary/defroute (str (:prefix env) "/login") []
-                    (session/put! :current-page #'login/login-page))
-
-(secretary/defroute (str (:prefix env) "/search") []
-                    (session/put! :current-page #'search/search-page))
-
-(defn load-bookmarks "Request bookmarks from the server and set local state."
-  [rev]
-  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
-            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
-            revision (get-in response [:body :revision])]
-        ;; Set the session state.
-        (session/put! :csrf-token (get-in response [:headers "csrf-token"]))
-        (session/put! :revision (js/parseInt revision))
-        (reset! session/state (merge @session/state bookmarks))
-
-        ;; Store the response locally.
-        (cookies/set! "revision" revision {:path (:prefix env)
-                                           :max-age (* (:cache-refresh-hours env) 60 60)})
-        (when-not (= rev revision)
-          (.setItem (.-localStorage js/window) "bookmarks"
-                    (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))
+(route "/" #'home/home-page)
+(route "/about" #'about/about-page)
+(route "/add" #'add/add-page)
+(route "/folder" #'folder/folder-page)
+(route "/icon" #'icon/icon-page)
+(route "/login" #'login/login-page)
+(route "/search" #'search/search-page)
 
 (defn current-page "Render the current page."
   []
@@ -69,13 +40,22 @@
 
 (defn init! "Set the state for the application."
   []
-  (let [revision (js/parseInt (cookies/get "revision" 0))]
-    (when-not (zero? revision)
-      (reset! session/state (merge @session/state
-                                   (read-string (.getItem (.-localStorage js/window) "bookmarks")))))
-    (load-bookmarks revision))
-  (set-active! 1)
-  (secretary/set-config! :prefix "/bookmark")
+  ;; Load bookmarks.
+  (when (cookies/get "auth-token")
+    (let [revision (js/parseInt (cookies/get "revision" 0))]
+      (when-not (zero? revision)
+        (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
+          (session/put! :revision (js/parseInt revision))
+          (reset! session/state (merge @session/state bookmarks))))
+      (load-bookmarks revision)))
+
+  (set-cookie! :csrf-token (url/url-decode (get-cookie :csrf-token)))
+  (set-cookie! :path (str (:path (url/url (-> js/window .-location .-href)))))
+  (when-not (= "/add" (:path (url/url (-> js/window .-location .-href))))
+    (set-cookie! :active 1))
+
+  ;; Setup navigation.
+  (secretary/set-config! :prefix (path))
   (accountant/configure-navigation!
    {:nav-handler #(secretary/dispatch! %)
     :path-exists? #(secretary/locate-route %)})

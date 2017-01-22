@@ -22,8 +22,6 @@
   (car/flushdb)
   (car/set "last-bookmark-id" (apply max (map :bookmark/id (:bookmarks bookmarks))))
   (car/set "latest-revision" (:revision bookmarks))
-  (dorun (map #(do
-                ; (println "Reloading" (:bookmark/id %) (:bookmark/title %))
-                 (car/set (:bookmark/id %) %)) (:bookmarks bookmarks)))
+  (dorun (map #(car/set (:bookmark/id %) %) (:bookmarks bookmarks)))
   (car/save))
 (println "Reloaded" (count (:bookmarks bookmarks)) "bookmarks")

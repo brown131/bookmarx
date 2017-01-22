@@ -1,27 +1,35 @@
 (ns bookmarx.common
   (:require [clojure.string :as str]
-            [cljs.reader :refer [read-string]]
             [reagent.cookies :as cookies]
-            [reagent.session :as session]))
+            [reagent.session :as session]
+            [cemerick.url :refer [url-decode]]
+            [cljs-http.client :as http]
+            [cljs.reader :refer [read-string]])
+  (:require-macros
+    [cljs.core.async.macros :refer [go go-loop]]))
 
 (def env (read-string js/env))
 
 (defn path "Create a url with the path from the environment."
   [& args]
-  (apply str (cons (:prefix bookmarx.common/env) args)))
+  (str/join (cons (:prefix bookmarx.common/env) args)))
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
-  (apply str (concat [(:host-url bookmarx.common/env) (:prefix bookmarx.common/env)] args)))
+  (str/join (concat [(:host-url bookmarx.common/env) (:prefix bookmarx.common/env)] args)))
 
-(defn get-active "Get the active folder from the session or else a cookie."
-  []
-  (if (session/get :active) (session/get :active) (cookies/get "active" 1)))
+(defn get-cookie
+  "Get an EDN cookie, first looking in the session. If not found it wll return the default."
+  [key & default]
+  (if-let [val (session/get key)] val
+    (if-let [val (cookies/get (subs (str key) 1))]
+      val
+      default)))
 
-(defn set-active! "Set the folder that is active in the session and as a cookie."
-  [active]
-  (session/put! :active (js/parseInt active))
-  (cookies/set! "active" active {:path (:prefix env)}))
+(defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
+  [key val]
+  (cookies/set! (subs (str key) 1) val {:path (:prefix env)})
+  (session/put! key val))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
@@ -41,3 +49,21 @@
     (js/Date. (js/parseInt (nth date-parts 3)) month (js/parseInt (nth date-parts 2))
               (js/parseInt (nth time-parts 0)) (js/parseInt (nth time-parts 1))
               (js/parseInt(nth time-parts 2)))))
+
+(defn load-bookmarks "Request bookmarks from the server and set local state."
+  [rev]
+  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
+            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
+            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
+            revision (get-in response [:body :revision])]
+        ;; Set the session state.
+        (set-cookie! :csrf-token (get-in response [:headers "csrf-token"]))
+        (session/put! :revision (js/parseInt revision))
+        (reset! session/state (merge @session/state bookmarks))
+
+        ;; Store the response locally.
+        (cookies/set! "revision" revision {:path (:prefix env)
+                                           :max-age (* (:cache-refresh-hours env) 60 60)})
+        (when-not (= rev revision)
+          (.setItem (.-localStorage js/window) "bookmarks"
+                    (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))

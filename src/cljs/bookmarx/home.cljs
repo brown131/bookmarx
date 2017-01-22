@@ -1,7 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.common :refer [env path set-active! parse-date]]
+            [bookmarx.common :refer [env path set-cookie! parse-date]]
             [bookmarx.header :as header]))
 
 (def ticks-in-hour (* 1000 60 60))
@@ -18,7 +18,7 @@
   (if active?
     [:li.active {:key (str id "-bc-key")} (if (= title "~Trash") "Trash" title)]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(set-active! id) :key (str id "-a-key")}
+     [:a {:on-click #(set-cookie! :active id) :key (str id "-a-key")}
       (if (= title "~Trash") "Trash" title)]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
@@ -63,7 +63,7 @@
            [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
                 :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
                 :on-click #(session/put! :add (assoc bookmark :folder? true))}])
-         [:a.bookmark {:key (str id "-title-key") :on-click #(set-active! id)}
+         [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)}
           (if (= title "~Trash") "Trash" title)]
          [:span.badge link-count]
          (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}

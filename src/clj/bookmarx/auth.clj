@@ -45,12 +45,12 @@
     (if (:auth-user request)
       (handler request)
       {:status 302
-       :headers {"Location " (str "/login?m=" (:uri request))}})))
+       :headers {"Location " (str (:prefix (env :client-env)) "/login?m=" (:uri request))}})))
 
 (defn wrap-authorized-redirects [handler]
   (fn [request]
     (let [response (handler request)
           location (get-in response [:headers "Location"])]
       (if (and location (not-any? #(re-matches % location) redirect-whitelist))
-        (assoc-in response [:headers "Location"] "/")
+        (assoc-in response [:headers "Location"] (str (:prefix (env :client-env)) "/"))
         response))))

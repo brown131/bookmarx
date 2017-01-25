@@ -52,7 +52,7 @@
 
 (defn load-bookmarks "Request bookmarks from the server and set local state."
   [rev]
-  (go (let [url (str (:host-url env) (:prefix env) "/api/bookmarks/since/" rev)
+  (go (let [url (server-path "/api/bookmarks/since/" rev)
             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]

@@ -43,6 +43,7 @@
   ;; Load bookmarks.
   (when (cookies/get "auth-token")
     (let [revision (js/parseInt (cookies/get "revision" 0))]
+      (println "revision" revision)
       (when-not (zero? revision)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
           (session/put! :revision (js/parseInt revision))
@@ -54,7 +55,7 @@
     (set-cookie! :active 1))
 
   ;; Setup navigation.
-  (secretary/set-config! :prefix (path))
+  (secretary/set-config! :prefix "/bookmark")
   (accountant/configure-navigation!
    {:nav-handler #(secretary/dispatch! %)
     :path-exists? #(secretary/locate-route %)})

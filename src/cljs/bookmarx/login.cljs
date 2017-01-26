@@ -35,7 +35,7 @@
               (load-bookmarks revision))
 
             ;; Redirect to requested page.
-            (accountant/navigate! (if redirect (path redirect) (path "/"))))))))
+            (accountant/navigate! (path (if redirect redirect "/"))))))))
 
 (defn row
   [label input]

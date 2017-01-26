@@ -50,7 +50,6 @@
       (load-bookmarks revision)))
 
   (set-cookie! :csrf-token (url/url-decode (get-cookie :csrf-token)))
-  (set-cookie! :path (str (:path (url/url (-> js/window .-location .-href)))))
   (when-not (= (path "/add") (:path (url/url (-> js/window .-location .-href))))
     (set-cookie! :active 1))
 

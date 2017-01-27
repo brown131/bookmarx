@@ -5,6 +5,7 @@
             [taoensso.timbre :as timbre]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
+            [ring.middleware.cookies :refer [wrap-cookies]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.edn :refer :all]
@@ -20,22 +21,22 @@
 
 (defroutes public-routes
            ;; Authentication
-           (GET "/login" [] page-handler)
-           (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
+           (GET "/login" [] login-page-handler)
+           (GET "/api/csrf-token" [] (get-csrf-token))
            (POST "/login" {credentials :edn-params} (create-auth-token credentials)))
 
 (defroutes secured-routes
            ;; Views
-           (GET "/" [] page-handler)
-           (GET "/add" [] page-handler)
-           (GET "/about" [] page-handler)
-           (GET "/folder" [] page-handler)
-           (GET "/icon" [] page-handler)
-           (GET "/logout" [] page-handler)
-           (GET "/search" [] page-handler)
+           (GET "/" [] secured-page-handler)
+           (GET "/add" [] secured-page-handler)
+           (GET "/about" [] secured-page-handler)
+           (GET "/folder" [] secured-page-handler)
+           (GET "/icon" [] secured-page-handler)
+           (GET "/logout" [] secured-page-handler)
+           (GET "/search" [] secured-page-handler)
 
            ;; REST API
-
+           (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
            (GET "/api/bookmarks" [] (get-bookmarks))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
@@ -64,11 +65,11 @@
   (-> #'app-routes
       wrap-anti-forgery
       wrap-middleware
+      wrap-cookies
       wrap-edn-params
       wrap-transit-response
       (wrap-cors :access-control-allow-origin [#"https://www.browncross.com"
-                                               #"http://localhost:3000"
-                                               #"http://localhost:3449"]
+                                               #"http://localhost:\d+"]
                  :access-control-allow-methods [:get :post :put :delete])))
 
  (defn -main [& args]

@@ -27,7 +27,7 @@
 (defn create-auth-token "Create an authorization token given credentials."
   [{:keys [:user :password]}]
   (if (credentials-valid? user password)
-    (let [exp (-> (:auth-token-hours (env :client-env)) t/hours t/from-now tc/to-long)
+    (let [exp (-> (env :auth-token-hours) t/hours t/from-now tc/to-long)
           auth-token (sign-token (pr-str {:user user :exp exp}))]
       {:status 201 :body (pr-str {:auth-token auth-token})})
     {:status 401 :body "Invalid credentials."}))
@@ -45,12 +45,12 @@
     (if (:auth-user request)
       (handler request)
       {:status 302
-       :headers {"Location " (str (:prefix (env :client-env)) "/login?m=" (:uri request))}})))
+       :headers {"Location " (str (env :prefix) "/login?m=" (:uri request))}})))
 
 (defn wrap-authorized-redirects [handler]
   (fn [request]
     (let [response (handler request)
           location (get-in response [:headers "Location"])]
       (if (and location (not-any? #(re-matches % location) redirect-whitelist))
-        (assoc-in response [:headers "Location"] (str (:prefix (env :client-env)) "/"))
+        (assoc-in response [:headers "Location"] (str (env :prefix) "/"))
         response))))

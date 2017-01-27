@@ -8,7 +8,7 @@
             [cemerick.url :refer [url url-decode]]
             [cljs-http.client :as http]
             [cljs.reader :refer [read-string]]
-            [bookmarx.common :refer [env path server-path get-cookie set-cookie! load-bookmarks]]
+            [bookmarx.common :refer [path server-path get-cookie set-cookie! load-bookmarks]]
             [bookmarx.header :as header])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
@@ -24,7 +24,7 @@
           (swap! doc #(assoc % :error (:body results)))
           (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")]
             ;; Save token.
-            (set-cookie! :auth-token auth-token (* (env :auth-token-hours) 60 60))
+            (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
 
             ;; Load bookmarks.
             (let [revision (js/parseInt (cookies/get "revision" 0))]

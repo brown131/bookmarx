@@ -1,15 +1,25 @@
 (ns bookmarx.header
   (:require [reagent.cookies :as cookies]
             [reagent.session :as session]
-            [bookmarx.common :refer [env path]]))
+            [bookmarx.common :refer [path]]))
 
 (enable-console-print!)
 
 (defn logout []
+  ;; Remove local cookies.
   (cookies/remove! "auth-token")
-  (cookies/remove! "bookmarks")
   (cookies/remove! "active")
   (cookies/remove! "revision")
+
+  ;; Remove cookies from server.
+  (cookies/remove! "host-url")
+  (cookies/remove! "prefix")
+  (cookies/remove! "new-hours")
+  (cookies/remove! "last-visited-hours")
+  (cookies/remove! "auth-token-hours")
+  (cookies/remove! "cache-refresh-hours")
+
+  (.removeItem (.-localStorage js/window) "bookmarks")
   (session/put! :revision 0))
 
 (defn header "Render the header for the page."

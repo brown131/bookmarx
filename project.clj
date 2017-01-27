@@ -71,16 +71,6 @@
                         :output-dir "target/cljsbuild/public/js/out"
                         :source-map true
                         :optimizations :none
-                        :pretty-print true}}
-            :devcards
-            {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-             :figwheel {:devcards true}
-             :compiler {:main "bookmarx.cards"
-                        :asset-path "js/devcards_out"
-                        :output-to "target/cljsbuild/public/js/app_devcards.js"
-                        :output-dir "target/cljsbuild/public/js/devcards_out"
-                        :source-map-timestamp true
-                        :optimizations :none
                         :pretty-print true}}}}
 
   :figwheel
@@ -101,7 +91,6 @@
                                   [figwheel-sidecar "0.5.8"]
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [com.cemerick/piggieback "0.2.1"]
-                                  [devcards "0.2.1-7" :exclusions [org.clojure/tools.reader]]
                                   [pjstadig/humane-test-output "0.8.0"]]
 
                    :source-paths ["env/dev/clj"]

@@ -27,9 +27,12 @@
       default)))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
-  [key val]
-  (cookies/set! (subs (str key) 1) val {:path (:prefix env)})
-  (session/put! key val))
+  ([key val expire-secs]
+    (cookies/set! (subs (str key) 1) val {:path (env :prefix) :max-age expire-secs})
+    (session/put! key val))
+  ([key val]
+    (cookies/set! (subs (str key) 1) val {:path (env :prefix)})
+    (session/put! key val)))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
@@ -56,14 +59,12 @@
             response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]
-        ;; Set the session state.
+        ;; Set the state.
         (set-cookie! :csrf-token (get-in response [:headers "csrf-token"]))
-        (session/put! :revision (js/parseInt revision))
-        (reset! session/state (merge @session/state bookmarks))
+        (set-cookie! :revision (js/parseInt revision) (* (env :cache-refresh-hours) 60 60))
 
-        ;; Store the response locally.
-        (cookies/set! "revision" revision {:path (:prefix env)
-                                           :max-age (* (:cache-refresh-hours env) 60 60)})
+        ;; Set the bookmarks.
+        (reset! session/state (merge @session/state bookmarks))
         (when-not (= rev revision)
           (.setItem (.-localStorage js/window) "bookmarks"
                     (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))

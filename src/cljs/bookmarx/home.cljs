@@ -1,7 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.common :refer [env path set-cookie! parse-date]]
+            [bookmarx.common :refer [path get-cookie set-cookie! parse-date]]
             [bookmarx.header :as header]))
 
 (def ticks-in-hour (* 1000 60 60))
@@ -33,8 +33,8 @@
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
                 bookmark/visits] :as bookmark} (session/get bookmark-key)
-        new-ticks (- (. js/Date (now)) (* (:new-hours env) ticks-in-hour))
-        last-visited-ticks (- (. js/Date (now)) (* (:last-visited-hours env) ticks-in-hour))]
+        new-ticks (- (. js/Date (now)) (* (get-cookie :new-hours) ticks-in-hour))
+        last-visited-ticks (- (. js/Date (now)) (* (get-cookie :last-visited-hours) ticks-in-hour))]
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon

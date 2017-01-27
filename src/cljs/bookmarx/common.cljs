@@ -6,17 +6,7 @@
             [cljs-http.client :as http]
             [cljs.reader :refer [read-string]])
   (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
-
-(def env (read-string js/env))
-
-(defn path "Create a url with the path from the environment."
-  [& args]
-  (str/join (cons (:prefix bookmarx.common/env) args)))
-
-(defn server-path "Create a url to the service with the path from the environment."
-  [& args]
-  (str/join (concat [(:host-url bookmarx.common/env) (:prefix bookmarx.common/env)] args)))
+    [cljs.core.async.macros :refer [go]]))
 
 (defn get-cookie
   "Get an EDN cookie, first looking in the session. If not found it wll return the default."
@@ -27,12 +17,19 @@
       default)))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
-  ([key val expire-secs]
-    (cookies/set! (subs (str key) 1) val {:path (env :prefix) :max-age expire-secs})
-    (session/put! key val))
-  ([key val]
-    (cookies/set! (subs (str key) 1) val {:path (env :prefix)})
+  [key val & expire-secs]
+  (let [opts {:path (get-cookie :prefix)}]
+    (cookies/set! (subs (str key) 1) val (if expire-secs (assoc opts :max-age expire-secs)
+                                                         opts))
     (session/put! key val)))
+
+(defn path "Create a url with the path from the environment."
+  [& args]
+  (str/join (cons (get-cookie :prefix) args)))
+
+(defn server-path "Create a url to the service with the path from the environment."
+  [& args]
+  (str/join (concat [(url-decode (get-cookie :host-url)) (get-cookie :prefix)] args)))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
@@ -60,8 +57,9 @@
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]
         ;; Set the state.
-        (set-cookie! :csrf-token (get-in response [:headers "csrf-token"]))
-        (set-cookie! :revision (js/parseInt revision) (* (env :cache-refresh-hours) 60 60))
+        (println "loaded csrf-token" (url-decode (get-in response [:headers "csrf-token"])))
+        (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
+        (set-cookie! :revision revision (* (get-cookie :cache-refresh-hours) 60 60))
 
         ;; Set the bookmarks.
         (reset! session/state (merge @session/state bookmarks))

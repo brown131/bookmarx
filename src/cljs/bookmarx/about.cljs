@@ -1,6 +1,6 @@
 (ns bookmarx.about
   (:require [reagent.session :as session]
-            [bookmarx.common :refer [env path]]
+            [bookmarx.common :refer [path]]
             [bookmarx.header :as header]))
 
 (defn about-page "Render the About page."

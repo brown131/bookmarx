@@ -3,7 +3,7 @@
             [reagent.session :as session]
             [goog.window :as gwin]
             [taoensso.timbre :as log]
-            [bookmarx.common :refer [env path]]
+            [bookmarx.common :refer [path]]
             [bookmarx.header :as header]))
     
 (defn search-bookmarks "Search the bookmarks for the given text."

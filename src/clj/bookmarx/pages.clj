@@ -18,13 +18,24 @@
     (header)
     [:body {:class "body-container"}
      [:div#app]
-     [:script {:type "text/javascript"} "var env='" (pr-str (env :client-env)) "';"]
      (include-js "js/app.js")
      (include-js "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js")
      (include-js "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js")]))
 
-(defn page-handler
+(defn login-page-handler
   [request]
-  (-> (r/response page-template)
-      (r/header "content-type" "text/html; charset=utf-8")
-      (r/set-cookie "csrf-token" *anti-forgery-token* {:path (:prefix (env :client-env))})))
+  (let [opts {:path (env :prefix)}]
+    (-> (r/response page-template)
+        (r/header "content-type" "text/html; charset=utf-8")
+        (r/set-cookie "host-url" (env :host-url) opts)
+        (r/set-cookie "prefix" (env :prefix) opts))))
+
+(defn secured-page-handler
+  [request]
+  (let [opts {:path (env :prefix)}]
+    (-> (r/response page-template)
+        (r/header "content-type" "text/html; charset=utf-8")
+        (r/set-cookie "new-hours" (env :new-hours) opts)
+        (r/set-cookie "last-visited-hours" (env :last-visited-hours) opts)
+        (r/set-cookie "auth-token-hours" (env :auth-token-hours) opts)
+        (r/set-cookie "cache-refresh-hours" (env :cache-refresh-hours) opts))))

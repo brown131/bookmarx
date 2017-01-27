@@ -24,6 +24,14 @@
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
+(defn get-csrf-token "Return an anti-forgery token in the header."
+  []
+  (try
+    (info "get-csrf-token")
+    {:status 200
+     :headers {"csrf-token" *anti-forgery-token*}}
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
 (defn get-bookmarks
   "Get all bookmark folders and their children and return them in an HTTP response."
   []

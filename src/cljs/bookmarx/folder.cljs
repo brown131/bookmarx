@@ -1,6 +1,6 @@
 (ns bookmarx.folder
   (:require [reagent.session :as session]
-            [bookmarx.common :refer [env path]]
+            [bookmarx.common :refer [path]]
             [bookmarx.header :as header]))
 
 (defn bookmark-tree "Render a bookmark in a tree."

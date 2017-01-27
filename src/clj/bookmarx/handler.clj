@@ -101,18 +101,19 @@
 (defn move-bookmark "Move a bookmark to a different folder."
   [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark} orig-bookmark]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
-        ancestor-ids  ; Find the ancestors from the new parent.
+        ancestor-ids  ; Find the ancestors of the new parent.
         (loop [ancestor-ids [parent-id id]]
           (let [ancestor (get @bookmarks (first ancestor-ids))]
             (if-not (:bookmark/parent-id ancestor)
               (reverse ancestor-ids)
               (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
-        orig-ancestor-ids  ; Find the ancestors from the original parent.
+        orig-ancestor-ids  ; Find the ancestors of the original parent.
         (loop [ancestor-ids [orig-parent-id]]
           (let [ancestor (get @bookmarks (first ancestor-ids))]
             (if-not (:bookmark/parent-id ancestor)
               (reverse ancestor-ids)
               (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
+        ;; TODO: The original and new parent of a *link* cannot be removed.
         diffs1 (difference (set ancestor-ids) (set orig-ancestor-ids))
         diffs2 (difference (set orig-ancestor-ids) (set ancestor-ids))
         changed-ids (doall (concat diffs1 diffs2))]

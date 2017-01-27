@@ -34,8 +34,6 @@
            (GET "/logout" [] page-handler)
            (GET "/search" [] page-handler)
 
-           (GET "/cards" [] cards-page)
-
            ;; REST API
 
            (GET "/api/bookmarks" [] (get-bookmarks))

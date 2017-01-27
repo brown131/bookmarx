@@ -43,7 +43,6 @@
   ;; Load bookmarks.
   (when (cookies/get "auth-token")
     (let [revision (js/parseInt (cookies/get "revision" 0))]
-      (println "revision" revision)
       (when-not (zero? revision)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
           (session/put! :revision (js/parseInt revision))

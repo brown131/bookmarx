@@ -27,7 +27,7 @@
 (defn create-auth-token "Create an authorization token given credentials."
   [{:keys [:user :password]}]
   (if (credentials-valid? user password)
-    (let [exp (-> (env :auth-token-hours) t/hours t/from-now tc/to-long)
+    (let [exp (-> (:auth-token-hours (env :client-env)) t/hours t/from-now tc/to-long)
           auth-token (sign-token (pr-str {:user user :exp exp}))]
       {:status 201 :body (pr-str {:auth-token auth-token})})
     {:status 401 :body "Invalid credentials."}))

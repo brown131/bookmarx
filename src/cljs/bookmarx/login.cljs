@@ -24,7 +24,7 @@
           (swap! doc #(assoc % :error (:body results)))
           (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")]
             ;; Save token.
-            (set-cookie! :auth-token auth-token)
+            (set-cookie! :auth-token auth-token (* (env :auth-token-hours) 60 60))
 
             ;; Load bookmarks.
             (let [revision (js/parseInt (cookies/get "revision" 0))]

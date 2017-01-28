@@ -1,5 +1,6 @@
 (ns bookmarx.login
-  (:require [reagent.session :as session]
+  (:require [reagent.core :refer [atom]]
+            [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields]]
             [bookmarx.client :refer [login]]
             [bookmarx.header :as header]))

@@ -2,27 +2,10 @@
   (:require [reagent.cookies :as cookies]
             [reagent.session :as session]
             [taoensso.timbre :as log]
-            [cljs-http.client :as http]
-            [bookmarx.common :refer [path server-path]])
-  (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
+            [bookmarx.client :refer [empty-trash]]
+            [bookmarx.common :refer [path server-path]]))
 
 (enable-console-print!)
-
-(defn empty-trash "Empty trash on the backend service."
-    []
-    (log/debugf "delete")
-    (go (let [body (:body (<! (http/delete (server-path "/api/bookmarks/trash")
-                                           {:with-credentials? false
-                                            :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-          ;; Remove the bookmark and its progeny from the session.
-          (dorun (map session/remove! (:deleted-ids body)))
-
-          ;; Replace the ancestor bookmarks in the session.
-          (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
-
-          ;; Update the revision number in the session.
-          (session/put! :revision (:revision body)))))
 
 (defn logout []
   ;; Remove local cookies.

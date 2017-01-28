@@ -121,10 +121,10 @@
             (if-not (:bookmark/parent-id ancestor)
               (reverse ancestor-ids)
               (recur (cons (:bookmark/parent-id ancestor) ancestor-ids)))))
-        ;; TODO: The original and new parent of a *link* cannot be removed.
         diffs1 (difference (set ancestor-ids) (set orig-ancestor-ids))
         diffs2 (difference (set orig-ancestor-ids) (set ancestor-ids))
-        changed-ids (doall (concat diffs1 diffs2))]
+        ;; Merge the differences between the change lists ensuring that both parents are kept.
+        changed-ids (doall (distinct (concat diffs1 diffs2 [parent-id orig-parent-id])))]
     ;; Remove the bookmark from the original parent.
     (swap! bookmarks update-in [orig-parent-id :bookmark/children]
            #(into [] (remove (fn [b] (=  b id)) %)))
@@ -232,9 +232,8 @@
       (swap! bookmarks update-in [trash-id :bookmark/children] vector)
 
       ;; Subtract the link count from the ancestors.
-      (dorun (map #(when (:bookmark/link-count %)
-                     (swap! bookmarks update-in [% :bookmark/link-count]
-                            (fn [b] (if link-count (- b link-count) (dec b))))) changed-ids))
+      (swap! bookmarks update-in [parent-id :bookmark/link-count] #(- % link-count))
+      (swap! bookmarks update-in [trash-id :bookmark/link-count] (fn [_] 0))
 
       ;; Persist the changes.
       (save-bookmarks! changed-ids)

@@ -1,14 +1,12 @@
 (ns bookmarx.core
   (:require [reagent.core :as reagent]
-            [reagent.cookies :as cookies]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
-            [cemerick.url :refer [url url-decode]]
-            [cljs-http.client :as http]
-            [cljs.reader :refer [read-string]]
+            [cemerick.url :refer [url]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
+            [bookmarx.client :refer [load-bookmarks]]
             [bookmarx.common :refer [path server-path set-cookie! get-cookie]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
@@ -42,7 +40,7 @@
 (defn init! "Set the state for the application."
   []
   ;; Load bookmarks if authenticated.
-  (login/load-bookmarks)
+  (load-bookmarks)
 
   ;; Set the folder to root if not adding.
   (when-not (= (path "/add") (:path (url (-> js/window .-location .-href))))

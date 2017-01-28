@@ -1,76 +1,16 @@
 (ns bookmarx.add
-  (:require [cljs.core.async :refer [<!]]
-            [reagent.core :refer [atom]]
-            [reagent.session :as session]
+  (:require [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields init-field value-of]]
             [accountant.core :as accountant]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url]]
-            [cljs-http.client :as http]
-            [bookmarx.common :refer [path server-path get-cookie set-cookie! sort-folder-children]]
-            [bookmarx.header :as header])
-  (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
-
-(defn get-edn-params "Remove temporary fields from the page document."
-  [doc]
-  (dissoc (if (:folder? @doc) (dissoc @doc :bookmark/url) @doc)
-          :bookmark/children :orig-parent-id :folder? :add? :delete? :query? :rating :rating-clicked))
+            [bookmarx.client :refer [add-bookmark update-bookmark delete-bookmark]]
+            [bookmarx.common :refer [path get-cookie]]
+            [bookmarx.header :as header]))
 
 (defn get-active-bookmark-id "Get the active bookmark id."
   [doc]
   (if (:bookmark/parent-id @doc) (:bookmark/parent-id @doc) (get-cookie :active)))
-
-(defn add-bookmark "Add a new bookmark."
-  [doc]
-  (go (let [body (:body (<! (http/post (server-path "/api/bookmarks")
-                                       {:edn-params (get-edn-params doc)
-                                        :with-credentials? false
-                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))
-            bookmark (first (if (:bookmark/url @doc)
-                              (filter #(= (:bookmark/id %) (:bookmark-id body))
-                                      (:bookmark/children (first (:bookmarks body))))
-                              (:bookmarks body)))]
-        ;; Set the new fields.
-        (swap! doc merge (select-keys bookmark [:bookmark/id :bookmark/created :bookmark/last-visited
-                                                :bookmark/visits :bookmark/revision]))
-
-        ;; Replace the changed folders in the session.
-        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
-
-        ;; Update the revision number in the session.
-        (session/put! :revision (:revision body)))))
-
-(defn update-bookmark "Update a bookmark."
-  [doc]
-    ;; Update the state in the remote repository.
-    (go (let [body (:body (<! (http/put (server-path"/api/bookmarks/"
-                                             (:bookmark/id @doc))
-                                           {:edn-params (get-edn-params doc)
-                                            :with-credentials? false
-                                            :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-          ;; Replace the ancestor bookmarks in the session.
-          (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
-
-          ;; Update the revision number in the session.
-          (session/put! :revision (:revision body)))))
-
-(defn delete-bookmark "Delete the bookmark on the backend service."
-  [doc]
-  (log/debugf "delete")
-  (go (let [body (:body (<! (http/delete (server-path "/api/bookmarks/"
-                                              (:bookmark/id @doc))
-                                         {:edn-params (get-edn-params doc)
-                                          :with-credentials? false
-                                          :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        ;; Remove the bookmark and its progeny from the session.
-        (dorun (map session/remove! (:deleted-ids body)))
-
-        ;; Replace the ancestor bookmarks in the session.
-        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
-
-        ;; Update the revision number in the session.
-        (session/put! :revision (:revision body)))))
 
 (defn trash-bookmark "Move a bookmark to the trash folder."
   [doc]

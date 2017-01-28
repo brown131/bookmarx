@@ -54,20 +54,21 @@
        (when (and last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
-        [:div.bookmark_children {:key (str id "-key")}
-         [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed")) :key (str id "-arrow-key")
-                 :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
-         (if (= title "~Trash")
-           [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
-                   :aria-hidden "true" :style {:width "19px"}}]
-           [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
-                :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
-                :on-click #(session/put! :add (assoc bookmark :folder? true))}])
-         [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)}
-          (if (= title "~Trash") "Trash" title)]
-         [:span.badge link-count]
-         (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
-                      (doall (map #(bookmark-tree %) children))])]))))
+        (when-not (empty? children)
+          [:div.bookmark_children {:key (str id "-key")}
+           [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed")) :key (str id "-arrow-key")
+                   :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
+           (if (= title "~Trash")
+             [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
+                     :aria-hidden "true" :style {:width "19px"}}]
+             [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
+                  :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
+                  :on-click #(session/put! :add (assoc bookmark :folder? true))}])
+           [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)}
+            (if (= title "~Trash") "Trash" title)]
+           [:span.badge link-count]
+           (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
+                        (doall (map #(bookmark-tree %) children))])])))))
 
 (defn home-page "Render the Home page."
   []

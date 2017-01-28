@@ -216,3 +216,34 @@
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids))})
     (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn delete-trash "Delete bookmarks from the trash in the database."
+  []
+  (try
+    (infof "delete-trash")
+    (let [trash-id -1
+          {:keys [:bookmark/parent-id :bookmark/link-count]} (get @bookmarks trash-id)
+          changed-ids [parent-id trash-id]
+          deleted-ids (get-in @bookmarks [trash-id :bookmark/children])]
+      ;; Remove deleted bookmarks from the cache.
+      (swap! bookmarks #(apply dissoc % deleted-ids))
+
+      ;; Remove all bookmarks from the trash folder.
+      (swap! bookmarks update-in [trash-id :bookmark/children] vector)
+
+      ;; Subtract the link count from the ancestors.
+      (dorun (map #(when (:bookmark/link-count %)
+                     (swap! bookmarks update-in [% :bookmark/link-count]
+                            (fn [b] (if link-count (- b link-count) (dec b))))) changed-ids))
+
+      ;; Persist the changes.
+      (save-bookmarks! changed-ids)
+
+      ;; Delete the bookmarks in the trash.
+      (delete-bookmarks! deleted-ids)
+
+      ;; Return the list of changed folders.
+      {:status 200
+       :headers {"content-type" "application/edn"}
+       :body (assoc (build-response changed-ids) :deleted-ids deleted-ids)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))

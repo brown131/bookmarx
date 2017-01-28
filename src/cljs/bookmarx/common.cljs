@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
-            [cemerick.url :refer [url-decode]]
+            [cemerick.url :refer [url url-decode]]
             [cljs-http.client :as http]
             [cljs.reader :refer [read-string]])
   (:require-macros
@@ -29,7 +29,8 @@
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
-  (str/join (concat [(url-decode (get-cookie :host-url)) (get-cookie :prefix)] args)))
+  (let [{:keys [:protocol :host :port :path]} (url (-> js/window .-location .-href))]
+    (str/join (concat [protocol "://" host (when port (str ":" port)) (when-not (= path "/"))] args))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
@@ -49,20 +50,3 @@
     (js/Date. (js/parseInt (nth date-parts 3)) month (js/parseInt (nth date-parts 2))
               (js/parseInt (nth time-parts 0)) (js/parseInt (nth time-parts 1))
               (js/parseInt(nth time-parts 2)))))
-
-(defn load-bookmarks "Request bookmarks from the server and set local state."
-  [rev]
-  (go (let [url (server-path "/api/bookmarks/since/" rev)
-            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
-            bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
-            revision (get-in response [:body :revision])]
-        ;; Set the state.
-        (println "loaded csrf-token" (url-decode (get-in response [:headers "csrf-token"])))
-        (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
-        (set-cookie! :revision revision (* (get-cookie :cache-refresh-hours) 60 60))
-
-        ;; Set the bookmarks.
-        (reset! session/state (merge @session/state bookmarks))
-        (when-not (= rev revision)
-          (.setItem (.-localStorage js/window) "bookmarks"
-                    (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))

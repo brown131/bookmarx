@@ -27,7 +27,6 @@
   (let [opts {:path (env :prefix)}]
     (-> (r/response page-template)
         (r/header "content-type" "text/html; charset=utf-8")
-        (r/set-cookie "host-url" (env :host-url) opts)
         (r/set-cookie "prefix" (env :prefix) opts))))
 
 (defn secured-page-handler

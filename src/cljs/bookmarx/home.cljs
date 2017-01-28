@@ -4,6 +4,8 @@
             [bookmarx.common :refer [path get-cookie set-cookie! parse-date]]
             [bookmarx.header :as header]))
 
+(enable-console-print!)
+
 (def ticks-in-hour (* 1000 60 60))
 
 (defn -get-route "Gets the route to a menu in a tree by id."
@@ -16,10 +18,9 @@
 (defn breadcrumb "Renders a breadcrumb."
   [id title active?]
   (if active?
-    [:li.active {:key (str id "-bc-key")} (if (= title "~Trash") "Trash" title)]
+    [:li.active {:key (str id "-bc-key")} title]
     [:li {:key (str id "-bc-key")}
-     [:a {:on-click #(set-cookie! :active id) :key (str id "-a-key")}
-      (if (= title "~Trash") "Trash" title)]]))
+     [:a {:on-click #(set-cookie! :active id) :key (str id "-a-key")} title]]))
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
@@ -54,18 +55,19 @@
        (when (and last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
-        (when-not (empty? children)
+        (println "ID" id children title)
+        (when-not (and (empty? children) (= id (session/get :active)))
           [:div.bookmark_children {:key (str id "-key")}
-           [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed")) :key (str id "-arrow-key")
+           [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
+                   :key (str id "-arrow-key")
                    :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
-           (if (= title "~Trash")
-             [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "~trash-icon-key"
+           (if (= id -1)
+             [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "trash-icon-key"
                      :aria-hidden "true" :style {:width "19px"}}]
              [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
                   :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
                   :on-click #(session/put! :add (assoc bookmark :folder? true))}])
-           [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)}
-            (if (= title "~Trash") "Trash" title)]
+           [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)} title]
            [:span.badge link-count]
            (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                         (doall (map #(bookmark-tree %) children))])])))))

@@ -62,8 +62,7 @@
                                (session/update-in! [:add :orig-parent-id] (fn [] (:bookmark/parent-id @doc)))
                                (session/put! :add @doc)))
                 :href (path "/folder")}
-   (let [title (:bookmark/title (session/get (get-active-bookmark-id doc)))]
-     (if (= title "~Trash") "Trash" title))])
+   (:bookmark/title (session/get (get-active-bookmark-id doc)))])
 
 (defn icon-selector "Render icon selection."
   [doc]

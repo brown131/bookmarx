@@ -8,19 +8,23 @@
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
+(declare set-cookie!)
+
 (defn get-cookie
   "Get an EDN cookie, first looking in the session. If not found it wll return the default."
   [key & default]
   (if-let [val (session/get key)] val
-    (if-let [val (cookies/get (subs (str key) 1))]
-      (read-string (str/replace (url-decode val) #"\+" " "))
-      default)))
+    (if-let [cookie (cookies/get (subs (str key) 1))]
+      (let [val (read-string (str/replace (url-decode cookie) #"\+" " "))]
+        (session/put! key val)
+        val)
+      (when-not (empty? default) (set-cookie! key (first default))))))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
   [key val & expire-secs]
-  (let [opts {:path (get-cookie :prefix)}]
-    (cookies/set! (subs (str key) 1) val (if expire-secs (assoc opts :max-age expire-secs)
-                                                         opts))
+  (let [opts {:path (get-cookie :prefix)}
+        opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
+    (cookies/set! (subs (str key) 1) val opts)
     (session/put! key val)))
 
 (defn path "Create a url with the path from the environment."

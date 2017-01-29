@@ -24,7 +24,7 @@
 
 (defn breadcrumbs "Render breadcrumbs for a bookmark."
   []
-  (let [route (-get-route (session/get :active))]
+  (let [route (-get-route (session/get :active 1))]
     [:ol.breadcrumbs
      (doall (map #(let [{:keys [bookmark/id bookmark/title]} (session/get %)]
                    (breadcrumb id title (= % (last route)))) route))]))
@@ -76,4 +76,4 @@
   [:div.col-sm-12
    [header/header true]
    [breadcrumbs]
-   (doall (map #(bookmark-tree %) (session/get-in [(session/get :active) :bookmark/children])))])
+   (doall (map #(bookmark-tree %) (session/get-in [(session/get :active 1) :bookmark/children])))])

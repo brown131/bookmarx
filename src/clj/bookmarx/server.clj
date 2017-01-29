@@ -35,15 +35,18 @@
            (GET "/icon" [] secured-page-handler)
            (GET "/logout" [] secured-page-handler)
            (GET "/search" [] secured-page-handler)
+           (GET "/settings" [] secured-page-handler)
 
            ;; REST API
            (GET "/api/bookmarks/since/:rev" [rev] (-> (get-bookmarks-since rev)
                                                       (set-csrf-token)
                                                       (set-env-cookie)))
+           (GET "/api/settings" [] (get-settings))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
+           (POST "/api/settings" {settings :edn-params} (post-settings settings))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
              [] (put-bookmark id bookmark))
-           (PUT "/api/bookmarks/:id/visit" [id] (put-bookmark-visit id))
+           (PUT "/api/bookmarks/visit/:id" [id] (put-bookmark-visit id))
            (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
            (DELETE "/api/bookmarks/trash" [] (delete-trash))
 

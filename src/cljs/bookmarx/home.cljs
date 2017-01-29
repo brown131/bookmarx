@@ -31,17 +31,14 @@
                    (breadcrumb id title (= % (last route)))) route))]))
 
 (defn link-click [id url]
-  (println "link-click")
   (update-bookmark-visit id)
   (gwin/open url))
 
 (defn folder-open [id]
-  (println "folder-open")
   (update-bookmark-visit id)
   (session/update-in! [id :open?] #(not %)))
 
 (defn folder-click [id]
-  (println "folder-click")
   (update-bookmark-visit id)
   (set-cookie! :active id))
 

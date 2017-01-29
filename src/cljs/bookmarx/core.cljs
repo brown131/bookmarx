@@ -12,7 +12,8 @@
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
             [bookmarx.login :as login]
-            [bookmarx.search :as search])
+            [bookmarx.search :as search]
+            [bookmarx.settings :as settings])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
@@ -28,6 +29,7 @@
 (route "/icon" #'icon/icon-page)
 (route "/login" #'login/login-page)
 (route "/search" #'search/search-page)
+(route "/settings" #'settings/settings-page)
 
 (defn current-page "Render the current page."
   []

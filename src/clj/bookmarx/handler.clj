@@ -6,7 +6,7 @@
             [ring.util.response :as r]
             [config.core :refer [env]]
             [bookmarx.auth :as auth]
-            [bookmarx.ds :refer :all])
+            [bookmarx.ds :as ds :refer [bookmarks]])
   (:import java.util.Date))
 
 (timbre/refer-timbre)
@@ -16,7 +16,7 @@
 
 (defn build-response "Build a response with the changed bookmarks."
   [changed-ids]
-  (let [latest-revision (get-latest-revision)]
+  (let [latest-revision (ds/get-latest-revision)]
     ;; Return the list of changed bookmarks and the latest revision.
     {:bookmarks (doall (mapv #(get @bookmarks %) changed-ids)) :revision latest-revision}))
 
@@ -31,7 +31,7 @@
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
-(defn set-env-cookie "Add a cookie to an HTTP response."
+(defn set-env-cookie "Add a cookie with environment properties to an HTTP response ."
   [response]
   (r/set-cookie response "env" (pr-str (into {} (map #(vector % (env %)) env-props)))))
 
@@ -53,7 +53,7 @@
           changed-bookmarks
           (into [] (vals (remove #(or (keyword? (key %))
                                       (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
-          latest-revision (get-latest-revision)]
+          latest-revision (ds/get-latest-revision)]
       {:status 200
        :headers {"content-type" "application/edn"}
        :body {:bookmarks changed-bookmarks :revision latest-revision}})
@@ -63,7 +63,7 @@
   [{:keys [:bookmark/url :bookmark/parent-id] :as bookmark}]
   (try
     (infof "post-bookmark %s" (pr-str bookmark))
-    (let [bookmark-id (inc-last-bookmark-id!)
+    (let [bookmark-id (ds/inc-last-bookmark-id!)
           now (java.util.Date.)
           new-bookmark (assoc (if url bookmark (assoc bookmark :bookmark/children []
                                                                :bookmark/link-count 0))
@@ -89,7 +89,7 @@
       (swap! bookmarks update parent-id sort-folder-children)
 
       ;; Persist the changes.
-      (save-bookmarks! changed-ids)
+      (ds/save-bookmarks! changed-ids)
 
       {:status 201
        :headers {"content-type" "application/edn"}
@@ -171,7 +171,7 @@
         (swap! bookmarks update parent-id sort-folder-children))
 
       ;; Persist the changes.
-      (save-bookmarks! changed-ids)
+      (ds/save-bookmarks! changed-ids)
 
       ;; Return the list of changed bookmarks.
       {:status 201
@@ -179,7 +179,7 @@
        :body (build-response changed-ids)})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn put-bookmark-visit "Update visit informatio of a bookmark in the database for an HTTP request."
+(defn put-bookmark-visit "Update visit information of a bookmark in the database for an HTTP request."
   [id]
   (try
     (infof "put-bookmark-visit %s" id)
@@ -191,7 +191,7 @@
         (swap! bookmarks assoc-in [bookmark-id :bookmark/visits] 1))
 
       ;; Persist the changes.
-      (save-bookmarks! [bookmark-id])
+      (ds/save-bookmarks! [bookmark-id])
 
       ;; Return the list of changed bookmarks.
       {:status 201
@@ -228,10 +228,10 @@
                             (fn [b] (if link-count (- b link-count) (dec b))))) changed-ids))
 
       ;; Persist the changes.
-      (save-bookmarks! changed-ids)
+      (ds/save-bookmarks! changed-ids)
 
       ;; Delete the bookmark and its progeny.
-      (delete-bookmarks! deleted-ids)
+      (ds/delete-bookmarks! deleted-ids)
 
       ;; Return the list of changed folders.
       {:status 200
@@ -258,13 +258,31 @@
       (swap! bookmarks update-in [trash-id :bookmark/link-count] (fn [_] 0))
 
       ;; Persist the changes.
-      (save-bookmarks! changed-ids)
+      (ds/save-bookmarks! changed-ids)
 
       ;; Delete the bookmarks in the trash.
-      (delete-bookmarks! deleted-ids)
+      (ds/delete-bookmarks! deleted-ids)
 
       ;; Return the list of changed folders.
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids deleted-ids)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn get-settings "Get all settings and return them in an HTTP response."
+  []
+  (try
+    (info "get-settings")
+    {:status 200
+     :headers {"content-type" "application/edn"}
+     :body (ds/get-settings)}
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn post-settings "Add settings into the database for an HTTP request."
+  [settings]
+  (try
+    (infof "post-settings %s" (pr-str settings))
+    (ds/save-settings! settings)
+    {:status 201
+     :headers {"content-type" "application/edn"}}
     (catch Exception e (errorf "Error %s" (.toString e)))))

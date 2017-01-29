@@ -1,14 +1,13 @@
 (ns bookmarx.client
-  (:require [clojure.string :as str]
-            [cljs.core.async :refer [<!]]
+  (:require [cljs.core.async :refer [<!]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [accountant.core :as accountant]
             [taoensso.timbre :as log]
-            [cemerick.url :refer [url url-decode]]
+            [cemerick.url :refer [url-decode]]
             [cljs.reader :refer [read-string]]
             [cljs-http.client :as http]
-            [bookmarx.common :refer [path server-path get-cookie set-cookie!]])
+            [bookmarx.common :refer [settings path server-path get-cookie set-cookie!]])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
@@ -53,9 +52,10 @@
 (defn update-bookmark-visit "Update a bookmark visit information."
   [id]
   ;; Update visit state in the remote repository.
-  (go (let [body (:body (<! (http/put (server-path "/api/bookmarks/" id "/visit")
+  (go (let [body (:body (<! (http/put (server-path "/api/bookmarks/visit/" id)
                                       {:with-credentials? false
                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
+        (println (server-path "/api/bookmarks/visit/" id))
         ;; Replace changed bookmarks in the session.
         (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
 
@@ -127,18 +127,29 @@
       (get-bookmarks rev))
     (get-csrf-token)))
 
+(defn get-settings "Request settings from the server and set session state."
+  []
+  (go (let [url (server-path "/api/settings")
+            response (<! (http/get url {:with-credentials? false}))]
+        (println "settings" (:body response) (string? (:body response)))
+        (reset! settings (:body response)))))
+
+(defn update-settings "Persist settings on the server."
+  []
+  (go (<! (http/post (server-path "/api/settings")
+                     {:edn-params @settings
+                      :with-credentials? false
+                      :headers {"x-csrf-token" (session/get :csrf-token)}}))))
+
 (defn login
+  "Post credentials to server to get a authentication token."
   [doc]
   (go (let [results (<! (http/post (server-path "/login")
                                    {:edn-params @doc
                                     :with-credentials? false
                                     :headers {"x-csrf-token" (session/get :csrf-token)}}))
             auth-token (:auth-token (read-string (:body results)))]
-        (if-not auth-token
-          (swap! doc #(assoc % :error (:body results)))
-          (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")
-                env-map (read-string (str/replace (url-decode (cookies/get "env")) #"\+" " "))]
-            (reset! session/state (merge @session/state env-map))
-            (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
-            (load-bookmarks)
-            (accountant/navigate! (path (if redirect redirect "/"))))))))
+        (if auth-token
+         (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
+         (session/put! :auth-token (:body results))))))
+

@@ -1,5 +1,6 @@
 (ns bookmarx.client
-  (:require [cljs.core.async :refer [<!]]
+  (:require [clojure.string :as str]
+            [cljs.core.async :refer [<!]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [accountant.core :as accountant]
@@ -124,12 +125,9 @@
             auth-token (:auth-token (read-string (:body results)))]
         (if-not auth-token
           (swap! doc #(assoc % :error (:body results)))
-          (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")]
-            ;; Save token.
+          (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")
+                env-map (read-string (str/replace (url-decode (cookies/get "env")) #"\+" " "))]
+            (reset! session/state (merge @session/state env-map))
             (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
-
-            ;; Load bookmarks.
             (load-bookmarks)
-
-            ;; Redirect to requested page.
             (accountant/navigate! (path (if redirect redirect "/"))))))))

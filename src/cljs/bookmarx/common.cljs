@@ -13,7 +13,7 @@
   [key & default]
   (if-let [val (session/get key)] val
     (if-let [val (cookies/get (subs (str key) 1))]
-      val
+      (read-string (str/replace (url-decode val) #"\+" " "))
       default)))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."

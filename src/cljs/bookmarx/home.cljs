@@ -55,7 +55,6 @@
        (when (and last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
-        (println "ID" id children title)
         (when-not (and (empty? children) (= id (session/get :active)))
           [:div.bookmark_children {:key (str id "-key")}
            [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))

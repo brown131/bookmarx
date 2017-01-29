@@ -22,8 +22,9 @@
 (defroutes public-routes
            ;; Authentication
            (GET "/login" [] login-page-handler)
-           (GET "/api/csrf-token" [] (get-csrf-token))
-           (POST "/login" {credentials :edn-params} (create-auth-token credentials)))
+           (GET "/api/csrf-token" [] (set-csrf-token {:status 200}))
+           (POST "/login" {credentials :edn-params} (-> (post-login credentials)
+                                                        (set-env-cookie))))
 
 (defroutes secured-routes
            ;; Views
@@ -36,8 +37,9 @@
            (GET "/search" [] secured-page-handler)
 
            ;; REST API
-           (GET "/api/bookmarks/since/:rev" [rev] (get-bookmarks-since rev))
-           (GET "/api/bookmarks" [] (get-bookmarks))
+           (GET "/api/bookmarks/since/:rev" [rev] (-> (get-bookmarks-since rev)
+                                                      (set-csrf-token)
+                                                      (set-env-cookie)))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
              [] (put-bookmark id bookmark))

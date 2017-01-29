@@ -3,9 +3,15 @@
             [clojure.string :as str]
             [taoensso.timbre :as timbre]
             [ring.middleware.anti-forgery :refer :all]
+            [ring.util.response :as r]
+            [config.core :refer [env]]
+            [bookmarx.auth :as auth]
             [bookmarx.ds :refer :all]))
 
 (timbre/refer-timbre)
+
+;; Client environment properties.
+(defonce env-props [:prefix :new-hours :last-visited-hours :auth-token-hours :cache-refresh-hours])
 
 (defn build-response "Build a response with the changed bookmarks."
   [changed-ids]
@@ -19,29 +25,22 @@
                                    (:bookmark/children folder)))
         make-sort-key #(if (:bookmark/title (get @bookmarks %))
                          (str/upper-case (:bookmark/title (get @bookmarks %)))
-                         (do (println "NO TITLE" % (str (get @bookmarks %))) ""))]
+                         (do (warn (str "NO TITLE" % (str (get @bookmarks %)))) ""))]
     (update folder :bookmark/children
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
-(defn get-csrf-token "Return an anti-forgery token in the header."
-  []
-  (try
-    (info "get-csrf-token")
-    {:status 200
-     :headers {"csrf-token" *anti-forgery-token*}}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+(defn set-env-cookie [response]
+  (r/set-cookie response "env" (pr-str (into {} (map #(vector % (env %)) env-props)))))
 
-(defn get-bookmarks
-  "Get all bookmark folders and their children and return them in an HTTP response."
-  []
-  (try
-    (info "get-bookmarks")
-    {:status 200
-     :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
-     :body {:bookmarks (into [] (vals (remove #(keyword? (key %)) @bookmarks)))
-            :revision (Integer/parseInt (get-latest-revision))}}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+(defn set-csrf-token [response]
+  (r/header response "csrf-token" *anti-forgery-token*))
+
+(defn post-login "Authenticate the login page form."
+  [{:keys [:user :password]}]
+  (if-let [auth-token (auth/create-auth-token user password)]
+    {:status 201 :body (pr-str {:auth-token auth-token})}
+    {:status 401 :body "Invalid credentials."}))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]
@@ -53,7 +52,7 @@
                                       (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))
           latest-revision (get-latest-revision)]
       {:status 200
-       :headers {"content-type" "application/edn" "csrf-token" *anti-forgery-token*}
+       :headers {"content-type" "application/edn"}
        :body {:bookmarks changed-bookmarks :revision latest-revision}})
       (catch Exception e (errorf "Error %s" (.toString e)))))
 

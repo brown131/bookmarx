@@ -8,18 +8,11 @@
 (enable-console-print!)
 
 (defn logout []
-  ;; Remove local cookies.
+  ;; Remove cookies.
   (cookies/remove! "auth-token")
   (cookies/remove! "active")
   (cookies/remove! "revision")
-
-  ;; Remove cookies from server.
-  (cookies/remove! "host-url")
-  (cookies/remove! "prefix")
-  (cookies/remove! "new-hours")
-  (cookies/remove! "last-visited-hours")
-  (cookies/remove! "auth-token-hours")
-  (cookies/remove! "cache-refresh-hours")
+  (cookies/remove! "env")
 
   (.removeItem (.-localStorage js/window) "bookmarks")
   (session/put! :revision 0))

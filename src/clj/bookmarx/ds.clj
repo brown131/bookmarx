@@ -15,6 +15,8 @@
 
 (defn get-latest-revision [] (second (wcar* (car/get "latest-revision"))))
 
+(defn inc-latest-revision! [] (second (wcar* (car/incr "latest-revision"))))
+
 (defn inc-last-bookmark-id! [] (second (wcar* (car/incr "last-bookmark-id"))))
 
 (defn get-password "Gets the password hash." [] (second (wcar* (car/get "password"))))
@@ -28,19 +30,25 @@
 (defn save-bookmarks! "Save changed bookmarks in the data store."
   [changed-ids]
   ; Update the revision.
-  (let [latest-revision (second (wcar* (car/incr "latest-revision")))]
-    ;; Set the revision in the changed bookmarks.
+  (let [latest-revision (inc-latest-revision!)]
+    ;; Save the revision in the changed bookmarks.
     (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
                 changed-ids)))
-
-  ;; Save the changes.
   (wcar*
     (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
     (car/bgsave)))
 
 (defn delete-bookmarks! "Delete bookmarks from the data store."
   [deleted-ids]
-  ;; Delete the bookmark and its progeny.
   (wcar*
     (dorun (map car/del deleted-ids))
+    (car/bgsave)))
+
+(defn get-settings []
+  (read-string (second (wcar* (car/get "settings")))))
+
+(defn save-settings! "Save the settings in the data store."
+  [settings]
+  (wcar*
+    (car/set "settings" (pr-str settings))
     (car/bgsave)))

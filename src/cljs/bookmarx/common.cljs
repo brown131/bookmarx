@@ -1,5 +1,6 @@
 (ns bookmarx.common
   (:require [clojure.string :as str]
+            [reagent.core :refer [atom]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [cemerick.url :refer [url url-decode]]
@@ -7,6 +8,10 @@
             [cljs.reader :refer [read-string]])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
+
+(def settings (atom :show-title false :show-url false :show-created false :show-last-visited false
+                    :show-visits false :show-rating false :show-new false :show-visited false
+                    :sort-on :title))
 
 (declare set-cookie!)
 

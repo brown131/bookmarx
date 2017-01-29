@@ -1,6 +1,7 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
+            [bookmarx.client :refer [update-bookmark-visit]]
             [bookmarx.common :refer [path get-cookie set-cookie! parse-date]]
             [bookmarx.header :as header]))
 
@@ -29,6 +30,21 @@
      (doall (map #(let [{:keys [bookmark/id bookmark/title]} (session/get %)]
                    (breadcrumb id title (= % (last route)))) route))]))
 
+(defn link-click [id url]
+  (println "link-click")
+  (update-bookmark-visit id)
+  (gwin/open url))
+
+(defn folder-open [id]
+  (println "folder-open")
+  (update-bookmark-visit id)
+  (session/update-in! [id :open?] #(not %)))
+
+(defn folder-click [id]
+  (println "folder-click")
+  (update-bookmark-visit id)
+  (set-cookie! :active id))
+
 (defn bookmark-tree "Render a bookmark in a tree."
   [bookmark-key]
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
@@ -46,7 +62,7 @@
          [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
                                  :on-click #(session/put! :add bookmark)
                                  :href (path "/add")}])
-       [:a.bookmark {:on-click #(gwin/open url) :key (str id "-link-key")} title]
+       [:a.bookmark {:on-click #(link-click id url) :key (str id "-link-key")} title]
        (when rating
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
@@ -59,14 +75,14 @@
           [:div.bookmark_children {:key (str id "-key")}
            [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                    :key (str id "-arrow-key")
-                   :on-click #(session/update-in! [id :open?] (fn [_] (not open?)))}]
+                   :on-click #(folder-open id)}]
            (if (= id -1)
              [:span {:class "glyphicon glyphicon-trash bookmark-link" :key "trash-icon-key"
                      :aria-hidden "true" :style {:width "19px"}}]
              [:a {:class (str "bookmark_folder-icon-" (if open? "open" "close"))
                   :aria-hidden "true" :key (str id "-icon-key") :href (path "/add")
                   :on-click #(session/put! :add (assoc bookmark :folder? true))}])
-           [:a.bookmark {:key (str id "-title-key") :on-click #(set-cookie! :active id)} title]
+           [:a.bookmark {:key (str id "-title-key") :on-click #(folder-click id)} title]
            [:span.badge link-count]
            (when open? [:ul.nav.nav-pills.nav-stacked {:key (str id "-children-key")}
                         (doall (map #(bookmark-tree %) children))])])))))

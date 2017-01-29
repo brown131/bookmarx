@@ -43,6 +43,7 @@
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
              [] (put-bookmark id bookmark))
+           (PUT "/api/bookmarks/:id/visit" [id] (put-bookmark-visit id))
            (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
            (DELETE "/api/bookmarks/trash" [] (delete-trash))
 

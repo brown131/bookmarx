@@ -13,9 +13,10 @@
 
 (defn form-template
   [doc]
-  [:div {:field :container}
-   [row "User" [:input.form-control {:field :text :id :user}]]
-   [row "Password" [:input.form-control {:field :password :id :password}]]])
+  [:div
+    [:div {:field :container}
+     [row "User" [:input.form-control {:field :text :id :user}]]
+     [row "Password" [:input.form-control {:field :password :id :password}]]]])
 
 (defn editor [doc & body]
   [:div body

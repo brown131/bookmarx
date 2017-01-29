@@ -6,7 +6,8 @@
             [ring.util.response :as r]
             [config.core :refer [env]]
             [bookmarx.auth :as auth]
-            [bookmarx.ds :refer :all]))
+            [bookmarx.ds :refer :all])
+  (:import java.util.Date))
 
 (timbre/refer-timbre)
 
@@ -30,10 +31,12 @@
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
-(defn set-env-cookie [response]
+(defn set-env-cookie "Add a cookie to an HTTP response."
+  [response]
   (r/set-cookie response "env" (pr-str (into {} (map #(vector % (env %)) env-props)))))
 
-(defn set-csrf-token [response]
+(defn set-csrf-token "Add an anti-forgery token to an HTTP response."
+  [response]
   (r/header response "csrf-token" *anti-forgery-token*))
 
 (defn post-login "Authenticate the login page form."
@@ -174,6 +177,26 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn put-bookmark-visit "Update visit informatio of a bookmark in the database for an HTTP request."
+  [id]
+  (try
+    (infof "put-bookmark-visit %s" id)
+    (let [bookmark-id (Integer/parseInt id)]
+      ;; Update the last visited and number of visits.
+      (swap! bookmarks assoc-in [bookmark-id :bookmark/last-visited] (Date.))
+      (if (get-in @bookmarks [bookmark-id :bookmark/visits])
+        (swap! bookmarks update-in [bookmark-id :bookmark/visits] inc)
+        (swap! bookmarks assoc-in [bookmark-id :bookmark/visits] 1))
+
+      ;; Persist the changes.
+      (save-bookmarks! [bookmark-id])
+
+      ;; Return the list of changed bookmarks.
+      {:status 201
+       :headers {"content-type" "application/edn"}
+       :body (build-response [bookmark-id])})
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."

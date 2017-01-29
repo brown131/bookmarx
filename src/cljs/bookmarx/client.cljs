@@ -40,12 +40,23 @@
 (defn update-bookmark "Update a bookmark."
   [doc]
   ;; Update the state in the remote repository.
-  (go (let [body (:body (<! (http/put (server-path"/api/bookmarks/"
-                                                  (:bookmark/id @doc))
+  (go (let [body (:body (<! (http/put (server-path"/api/bookmarks/" (:bookmark/id @doc))
                                       {:edn-params (get-edn-params doc)
                                        :with-credentials? false
                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        ;; Replace the ancestor bookmarks in the session.
+        ;; Replace changed bookmarks in the session.
+        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
+
+        ;; Update the revision number in the session.
+        (session/put! :revision (:revision body)))))
+
+(defn update-bookmark-visit "Update a bookmark visit information."
+  [id]
+  ;; Update visit state in the remote repository.
+  (go (let [body (:body (<! (http/put (server-path "/api/bookmarks/" id "/visit")
+                                      {:with-credentials? false
+                                       :headers {"x-csrf-token" (session/get :csrf-token)}})))]
+        ;; Replace changed bookmarks in the session.
         (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
 
         ;; Update the revision number in the session.

@@ -1,8 +1,8 @@
 (ns bookmarx.pages
   (:require [hiccup.page :refer [include-js include-css html5]]
-            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
             [ring.util.response :as r]
-            [config.core :refer [env]]))
+            [config.core :refer [env]]
+            [bookmarx.handler :refer [set-env-cookie]]))
 
 (defn header []
   [:head
@@ -24,17 +24,12 @@
 
 (defn login-page-handler
   [request]
-  (let [opts {:path (env :prefix)}]
-    (-> (r/response page-template)
-        (r/header "content-type" "text/html; charset=utf-8")
-        (r/set-cookie "prefix" (env :prefix) opts))))
+  (-> (r/response page-template)
+      (r/header "content-type" "text/html; charset=utf-8")
+      (r/set-cookie "prefix" (env :prefix))))
 
 (defn secured-page-handler
   [request]
-  (let [opts {:path (env :prefix)}]
-    (-> (r/response page-template)
-        (r/header "content-type" "text/html; charset=utf-8")
-        (r/set-cookie "new-hours" (env :new-hours) opts)
-        (r/set-cookie "last-visited-hours" (env :last-visited-hours) opts)
-        (r/set-cookie "auth-token-hours" (env :auth-token-hours) opts)
-        (r/set-cookie "cache-refresh-hours" (env :cache-refresh-hours) opts))))
+  (-> (r/response page-template)
+      (r/header "content-type" "text/html; charset=utf-8")
+      (set-env-cookie)))

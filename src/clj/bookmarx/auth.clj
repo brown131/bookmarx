@@ -25,12 +25,10 @@
   (when (= user (env :user)) (hs/check password (ds/get-password))))
 
 (defn create-auth-token "Create an authorization token given credentials."
-  [{:keys [:user :password]}]
-  (if (credentials-valid? user password)
-    (let [exp (-> (env :auth-token-hours) t/hours t/from-now tc/to-long)
-          auth-token (sign-token (pr-str {:user user :exp exp}))]
-      {:status 201 :body (pr-str {:auth-token auth-token})})
-    {:status 401 :body "Invalid credentials."}))
+  [user password]
+  (when (credentials-valid? user password)
+    (let [exp (-> (env :auth-token-hours) t/hours t/from-now tc/to-long)]
+      (sign-token (pr-str {:user user :exp exp})))))
 
 (defn wrap-auth-token [handler]
   (fn [request]

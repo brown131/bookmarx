@@ -29,8 +29,9 @@
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
-  (let [{:keys [:protocol :host :port :path]} (url (-> js/window .-location .-href))]
-    (str/join (concat [protocol "://" host (when port (str ":" port)) (when-not (= path "/"))] args))))
+  (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
+    (str protocol "://" host (if (> port 0) (str ":" port) "")
+         (str/join (cons (get-cookie :prefix) args)))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]

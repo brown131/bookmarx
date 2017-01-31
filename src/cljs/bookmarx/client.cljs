@@ -49,18 +49,14 @@
         ;; Update the revision number in the session.
         (session/put! :revision (:revision body)))))
 
-(defn update-bookmark-visit "Update a bookmark visit information."
+(defn visit-bookmark "Update a bookmark's visit information."
   [id]
   ;; Update visit state in the remote repository.
   (go (let [body (:body (<! (http/put (server-path "/api/bookmarks/visit/" id)
                                       {:with-credentials? false
                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
-        (println (server-path "/api/bookmarks/visit/" id))
         ;; Replace changed bookmarks in the session.
-        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body)))
-
-        ;; Update the revision number in the session.
-        (session/put! :revision (:revision body)))))
+        (dorun (map #(session/put! (:bookmark/id %) %) (:bookmarks body))))))
 
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
@@ -129,6 +125,7 @@
 
 (defn get-settings "Request settings from the server and set session state."
   []
+  (println "get-settings" (pr-str @settings))
   (go (let [url (server-path "/api/settings")
             response (<! (http/get url {:with-credentials? false}))]
         (println "settings" (:body response) (string? (:body response)))
@@ -136,6 +133,7 @@
 
 (defn update-settings "Persist settings on the server."
   []
+  (println "update-settings" (pr-str @settings))
   (go (<! (http/post (server-path "/api/settings")
                      {:edn-params @settings
                       :with-credentials? false

@@ -1,8 +1,8 @@
 (ns bookmarx.home
   (:require [reagent.session :as session]
             [goog.window :as gwin]
-            [bookmarx.client :refer [update-bookmark-visit]]
-            [bookmarx.common :refer [path get-cookie set-cookie! parse-date]]
+            [bookmarx.client :refer [visit-bookmark]]
+            [bookmarx.common :refer [settings path get-cookie set-cookie! parse-date]]
             [bookmarx.header :as header]))
 
 (enable-console-print!)
@@ -31,15 +31,15 @@
                    (breadcrumb id title (= % (last route)))) route))]))
 
 (defn link-click [id url]
-  (update-bookmark-visit id)
+  (visit-bookmark id)
   (gwin/open url))
 
 (defn folder-open [id]
-  (update-bookmark-visit id)
+  ;(visit-bookmark id)
   (session/update-in! [id :open?] #(not %)))
 
 (defn folder-click [id]
-  (update-bookmark-visit id)
+  (visit-bookmark id)
   (set-cookie! :active id))
 
 (defn bookmark-tree "Render a bookmark in a tree."
@@ -47,6 +47,8 @@
   (let [{:keys [bookmark/id bookmark/title bookmark/url bookmark/rating
                 bookmark/icon bookmark/icon-color bookmark/created bookmark/last-visited
                 bookmark/visits] :as bookmark} (session/get bookmark-key)
+        {:keys [show-title show-url show-rating show-created show-last-visited show-visits show-new
+                show-visited sort-on]} @settings
         new-ticks (- (. js/Date (now)) (* (get-cookie :new-hours) ticks-in-hour))
         last-visited-ticks (- (. js/Date (now)) (* (get-cookie :last-visited-hours) ticks-in-hour))]
     (if url
@@ -59,13 +61,18 @@
          [:a.bookmark_link-icon {:aria-hidden "true" :key (str id "-icon-key")
                                  :on-click #(session/put! :add bookmark)
                                  :href (path "/add")}])
-       [:a.bookmark {:on-click #(link-click id url) :key (str id "-link-key")} title]
-       (when rating
+       (when show-title
+        [:a.bookmark {:on-click #(link-click id url) :key (str id "-link-key")} title])
+       (when show-url [:dfn url])
+       (when (and show-rating rating)
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
-       (when (and created (> (.getTime (parse-date created)) new-ticks))
+       (when show-created [:dfn " Created: " (str created)])
+       (when show-last-visited [:dfn " Last Visited: " (str last-visited)])
+       (when show-visits [:dfn " Visits: " visits])
+       (when (and show-new created (> (.getTime (parse-date created)) new-ticks))
          [:span.bookmark-new])
-       (when (and last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
+       (when (and show-visited last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
         (when-not (and (empty? children) (= id (session/get :active)))

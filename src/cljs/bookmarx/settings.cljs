@@ -18,7 +18,7 @@
                   [:div.col-sm-1 [:input {:field :radio :name name :value value}]] label]])
 
 (defn form-template
-  [doc]
+  []
   [:div
    [:div {:field :container}
     [:div.row [:div.col-sm-2 ^{:key "show"} [:h3 "Show:"]]]
@@ -47,11 +47,10 @@
     ]])
 
 (defn save-settings []
-  (println @settings)
   (update-settings)
   (accountant/navigate! (path "/")))
 
-(defn editor [settings & body]
+(defn editor [& body]
   [:div body
    (when (:error @settings)
      [:div.alert.alert-danger (:error @settings)])
@@ -61,4 +60,5 @@
   []
   [:div.col-sm-12
    [header/header]
-   [editor settings [bind-fields (form-template settings) settings]]])
+   ;[:div "settings" (pr-str @settings)]
+   [editor [bind-fields (form-template) settings]]])

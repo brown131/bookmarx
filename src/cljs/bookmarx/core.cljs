@@ -6,7 +6,7 @@
             [cemerick.url :refer [url]]
             [bookmarx.about :as about]
             [bookmarx.add :as add]
-            [bookmarx.client :refer [load-bookmarks]]
+            [bookmarx.client :refer [load-bookmarks get-settings]]
             [bookmarx.common :refer [path server-path set-cookie! get-cookie]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
@@ -43,6 +43,7 @@
   []
   ;; Load bookmarks if authenticated.
   (load-bookmarks)
+  (get-settings)
 
   ;; Set the folder to root if not adding.
   (when-not (= (path "/add") (:path (url (-> js/window .-location .-href))))

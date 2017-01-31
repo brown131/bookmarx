@@ -27,16 +27,21 @@
     (car/set "password" (hs/derive password))
     (car/bgsave)))
 
-(defn save-bookmarks! "Save changed bookmarks in the data store."
+(defn update-bookmarks! "Update changed bookmarks in the data store."
+  [changed-ids]
+  ; Update the revision.
+  (wcar*
+    (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
+    (car/bgsave)))
+
+(defn save-bookmarks! "Save changed bookmarks in the data store and update their revision."
   [changed-ids]
   ; Update the revision.
   (let [latest-revision (inc-latest-revision!)]
     ;; Save the revision in the changed bookmarks.
     (dorun (map #(swap! bookmarks update-in [% :bookmark/revision] (constantly latest-revision))
                 changed-ids)))
-  (wcar*
-    (dorun (map #(car/set (key %) (val %)) (select-keys @bookmarks changed-ids)))
-    (car/bgsave)))
+  (update-bookmarks! changed-ids))
 
 (defn delete-bookmarks! "Delete bookmarks from the data store."
   [deleted-ids]

@@ -128,7 +128,6 @@
   (println "get-settings" (pr-str @settings))
   (go (let [url (server-path "/api/settings")
             response (<! (http/get url {:with-credentials? false}))]
-        (println "settings" (:body response) (string? (:body response)))
         (reset! settings (:body response)))))
 
 (defn update-settings "Persist settings on the server."

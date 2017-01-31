@@ -8,10 +8,13 @@
 (def db (atom (env :database)))
 (defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select @db) ~@body))
 
-;; Cache
-(def bookmarks (atom (let [keys (remove symbol? (map read-string (second (wcar* (car/keys "*")))))
-                           values (second (wcar* (apply car/mget keys)))]
-                       (zipmap keys values))))
+;; Bookmark cache
+(def bookmarks (atom nil))
+
+(defn cache-bookmarks []
+  (reset! bookmarks (let [keys (remove symbol? (map read-string (second (wcar* (car/keys "*")))))
+                          values (second (wcar* (apply car/mget keys)))]
+                      (zipmap keys values))))
 
 (defn get-latest-revision [] (second (wcar* (car/get "latest-revision"))))
 

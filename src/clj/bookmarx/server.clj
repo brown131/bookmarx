@@ -13,6 +13,7 @@
             [ring.middleware.transit :refer [wrap-transit-response]]
             [prone.middleware :refer [wrap-exceptions]]
             [bookmarx.auth :refer :all]
+            [bookmarx.ds :refer [cache-bookmarks]]
             [bookmarx.handler :refer :all]
             [bookmarx.pages :refer :all])
   (:gen-class))
@@ -83,6 +84,8 @@
    (timbre/set-config! (dissoc (env :log-config) :fname))
    (timbre/merge-config!
      {:appenders {:spit (timbre/spit-appender {:fname (:fname (env :log-config))})}})
+
+   (cache-bookmarks)
 
    (let [port (Integer/parseInt (or (env :port) "3000"))]
      (run-jetty app {:port port :join? false})))

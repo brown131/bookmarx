@@ -69,7 +69,7 @@
            [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
        (when show-created [:dfn " Created: " (str created)])
        (when show-last-visited [:dfn " Last Visited: " (str last-visited)])
-       (when show-visits [:dfn " Visits: " visits])
+       (when show-visits [:span.label.label-primary visits])
        (when (and show-new created (> (.getTime (parse-date created)) new-ticks))
          [:span.bookmark-new])
        (when (and show-visited last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))

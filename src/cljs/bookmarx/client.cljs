@@ -133,7 +133,6 @@
 
 (defn update-settings "Persist settings on the server."
   []
-  (println "update-settings" (pr-str @settings))
   (go (<! (http/post (server-path "/api/settings")
                      {:edn-params @settings
                       :with-credentials? false

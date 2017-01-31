@@ -191,7 +191,7 @@
         (swap! bookmarks assoc-in [bookmark-id :bookmark/visits] 1))
 
       ;; Persist the changes.
-      (ds/save-bookmarks! [bookmark-id])
+      (ds/update-bookmarks! [bookmark-id])
 
       ;; Return the list of changed bookmarks.
       {:status 201

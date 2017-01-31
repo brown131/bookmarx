@@ -9,9 +9,9 @@
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
-(def settings (atom :show-title false :show-url false :show-created false :show-last-visited false
-                    :show-visits false :show-rating false :show-new false :show-visited false
-                    :sort-on :title))
+(defonce settings (atom :show-title false :show-url false :show-created false :show-last-visited false
+                        :show-visits false :show-rating false :show-new false :show-visited false
+                        :sort-on :title))
 
 (declare set-cookie!)
 

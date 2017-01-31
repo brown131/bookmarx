@@ -60,5 +60,4 @@
   []
   [:div.col-sm-12
    [header/header]
-   ;[:div "settings" (pr-str @settings)]
    [editor [bind-fields (form-template) settings]]])

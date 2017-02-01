@@ -51,6 +51,7 @@
                 show-visited sort-on]} @settings
         new-ticks (- (. js/Date (now)) (* (get-cookie :new-hours) ticks-in-hour))
         last-visited-ticks (- (. js/Date (now)) (* (get-cookie :last-visited-hours) ticks-in-hour))]
+    ;; Links
     (if url
       [:div.bookmark_children {:key (str id "-key")}
        (if icon
@@ -63,7 +64,7 @@
                                  :href (path "/add")}])
        (when show-title
         [:a.bookmark {:on-click #(link-click id url) :key (str id "-link-key")} title])
-       (when show-url [:dfn url])
+       (when show-url [:a.text-muted {:on-click #(link-click id url) :key (str id "-url-key")} url])
        (when (and show-rating rating)
          (for [i (range 0 rating)]
            [:span.bookmark_link-icon-rating {:aria-hidden "true" :key (str id "-rating" i "-key")}]))
@@ -74,8 +75,9 @@
          [:span.bookmark-new])
        (when (and show-visited last-visited (> (.getTime (parse-date last-visited)) last-visited-ticks))
          [:span.bookmark-visited])]
+      ;; Folders
       (let [{:keys [bookmark/children bookmark/title bookmark/link-count open?]} (session/get id)]
-        (when-not (and (empty? children) (= id (session/get :active)))
+        (when (and (not= id (session/get :active)) (or (not (empty? children)) (= id -1)))
           [:div.bookmark_children {:key (str id "-key")}
            [:span {:class (str "bookmark_arrow" (when (not open?) "-collapsed"))
                    :key (str id "-arrow-key")

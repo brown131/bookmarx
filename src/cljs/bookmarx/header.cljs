@@ -12,7 +12,6 @@
   (cookies/remove! "auth-token")
   (cookies/remove! "active")
   (cookies/remove! "revision")
-  (cookies/remove! "env")
 
   (.removeItem (.-localStorage js/window) "bookmarks")
   (session/put! :revision 0))

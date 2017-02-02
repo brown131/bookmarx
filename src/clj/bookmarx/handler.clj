@@ -31,24 +31,45 @@
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
-(defn set-env-cookie "Add a cookie with environment properties to an HTTP response ."
-  [response]
-  (r/set-cookie response "env" (pr-str (into {} (map #(vector % (env %)) env-props)))))
+(defn get-environment "Get environment properties. Include an anti-forgery token to an HTTP response."
+  []
+  (try
+    {:status 200
+     :headers {"content-type" "application/edn"
+               "csrf-token" *anti-forgery-token*}
+     :body (into {} (map #(vector % (env %)) env-props))}
+    (catch Exception e (errorf "Error %s" (.toString e)))))
 
-(defn set-csrf-token "Add an anti-forgery token to an HTTP response."
-  [response]
-  (r/header response "csrf-token" *anti-forgery-token*))
+(defn get-settings "Get all settings and return them in an HTTP response."
+  []
+  (try
+    (info "get-settings")
+    {:status 200
+     :headers {"content-type" "application/edn"}
+     :body (ds/get-settings)}
+    (catch Exception e (errorf "Error %s" (.toString e)))))
+
+(defn post-settings "Add settings into the database for an HTTP request."
+  [settings]
+  (try
+    (infof "post-settings %s" (pr-str settings))
+    (ds/save-settings! settings)
+    {:status 201
+     :headers {"content-type" "application/edn"}}
+    (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn post-login "Authenticate the login page form."
   [{:keys [:user :password]}]
   (if-let [auth-token (auth/create-auth-token user password)]
-    {:status 201 :body (pr-str {:auth-token auth-token})}
-    {:status 401 :body "Invalid credentials."}))
+    {:status 201
+     :body (pr-str {:auth-token auth-token})}
+    {:status 401
+     :body "Invalid credentials."}))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]
   (try
-    (infof "get-revised-bookmarks %s" rev)
+    (infof "get-bookmarks-since %s" rev)
     (let [rev-num (Integer/parseInt rev)
           changed-bookmarks
           (into [] (vals (remove #(or (keyword? (key %))
@@ -267,22 +288,4 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids deleted-ids)})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
-
-(defn get-settings "Get all settings and return them in an HTTP response."
-  []
-  (try
-    (info "get-settings")
-    {:status 200
-     :headers {"content-type" "application/edn"}
-     :body (ds/get-settings)}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
-
-(defn post-settings "Add settings into the database for an HTTP request."
-  [settings]
-  (try
-    (infof "post-settings %s" (pr-str settings))
-    (ds/save-settings! settings)
-    {:status 201
-     :headers {"content-type" "application/edn"}}
     (catch Exception e (errorf "Error %s" (.toString e)))))

@@ -17,30 +17,30 @@
 
 (defn get-cookie
   "Get an EDN cookie, first looking in the session. If not found it wll return the default."
-  [kw & default]
-  (if-let [val (session/get kw)] val
-    (if-let [cookie (cookies/get (subs (str kw) 1))]
+  [key & default]
+  (if-let [val (session/get key)] val
+    (if-let [cookie (cookies/get (subs (str key) 1))]
       (let [val (read-string (str/replace (url-decode cookie) #"\+" " "))]
-        (session/put! kw val)
+        (session/put! key val)
         val)
-      (when-not (empty? default) (set-cookie! kw (first default))))))
+      (when-not (empty? default) (set-cookie! key (first default))))))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
-  [kw val & expire-secs]
-  (let [opts {:path (get-cookie :prefix)}
+  [key val & expire-secs]
+  (let [opts {:path (session/get :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
-    (cookies/set! (subs (str kw) 1) val opts)
-    (session/put! kw val)))
+    (cookies/set! (subs (str key) 1) val opts)
+    (session/put! key val)))
 
 (defn path "Create a url with the path from the environment."
   [& args]
-  (str/join (cons (get-cookie :prefix) args)))
+  (str/join (cons (session/get :prefix) args)))
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
   (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
     (str protocol "://" host (if (> port 0) (str ":" port) "")
-         (str/join (cons (get-cookie :prefix) args)))))
+         (str/join (cons (session/get :prefix) args)))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]

@@ -42,11 +42,11 @@
            (GET "/api/settings" [] (get-settings))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (POST "/api/settings" {settings :edn-params} (post-settings settings))
+           (PUT "/api/bookmarks/visit/:id" [id] (put-bookmark-visit id))
            (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
              [] (put-bookmark id bookmark))
-           (PUT "/api/bookmarks/visit/:id" [id] (put-bookmark-visit id))
-           (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
            (DELETE "/api/bookmarks/trash" [] (delete-trash))
+           (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
 
            (resources "/")
            (not-found "Not Found"))

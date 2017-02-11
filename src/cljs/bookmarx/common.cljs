@@ -17,20 +17,20 @@
 
 (defn get-cookie
   "Get an EDN cookie, first looking in the session. If not found it wll return the default."
-  [key & default]
-  (if-let [val (session/get key)] val
-    (if-let [cookie (cookies/get (subs (str key) 1))]
+  [kw & default]
+  (if-let [val (session/get kw)] val
+    (if-let [cookie (cookies/get (subs (str kw) 1))]
       (let [val (read-string (str/replace (url-decode cookie) #"\+" " "))]
-        (session/put! key val)
+        (session/put! kw val)
         val)
-      (when-not (empty? default) (set-cookie! key (first default))))))
+      (when-not (empty? default) (set-cookie! kw (first default))))))
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
-  [key val & expire-secs]
+  [kw val & expire-secs]
   (let [opts {:path (get-cookie :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
-    (cookies/set! (subs (str key) 1) val opts)
-    (session/put! key val)))
+    (cookies/set! (subs (str kw) 1) val opts)
+    (session/put! kw val)))
 
 (defn path "Create a url with the path from the environment."
   [& args]

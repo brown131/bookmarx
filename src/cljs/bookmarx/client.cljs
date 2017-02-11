@@ -98,7 +98,7 @@
             revision (get-in response [:body :revision])]
         ;; Set the state.
         (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
-        (set-cookie! :revision revision (* (get-cookie :cache-refresh-hours) 60 60))
+        (set-cookie! :revision revision (* (:cache-refresh-hours (get-cookie :env)) 60 60))
 
         ;; Set the bookmarks.
         (reset! session/state (merge @session/state bookmarks))
@@ -118,7 +118,6 @@
     (let [rev (js/parseInt (cookies/get "revision" 0))]
       (when-not (zero? rev)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
-          (session/put! :revision rev)
           (reset! session/state (merge @session/state bookmarks))))
       (get-bookmarks rev))
     (get-csrf-token)))
@@ -146,6 +145,6 @@
                                     :headers {"x-csrf-token" (session/get :csrf-token)}}))
             auth-token (:auth-token (read-string (:body results)))]
         (if auth-token
-         (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
+         (set-cookie! :auth-token auth-token (* (:auth-token-hours (get-cookie :env)) 60 60))
          (session/put! :auth-token (:body results))))))
 

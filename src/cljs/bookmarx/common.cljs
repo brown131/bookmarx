@@ -27,20 +27,20 @@
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
   [key val & expire-secs]
-  (let [opts {:path (session/get :prefix)}
+  (let [opts {:path (get-cookie :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
     (cookies/set! (subs (str key) 1) val opts)
     (session/put! key val)))
 
 (defn path "Create a url with the path from the environment."
   [& args]
-  (str/join (cons (session/get :prefix) args)))
+  (str/join (cons (get-cookie :prefix) args)))
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
   (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
     (str protocol "://" host (if (> port 0) (str ":" port) "")
-         (str/join (cons (session/get :prefix) args)))))
+         (str/join (cons (get-cookie :prefix) args)))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]

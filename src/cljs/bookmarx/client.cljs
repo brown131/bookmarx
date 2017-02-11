@@ -1,5 +1,6 @@
 (ns bookmarx.client
-  (:require [cljs.core.async :refer [<!]]
+  (:require [clojure.string :as str]
+            [cljs.core.async :refer [<!]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [accountant.core :as accountant]
@@ -7,7 +8,7 @@
             [cemerick.url :refer [url-decode]]
             [cljs.reader :refer [read-string]]
             [cljs-http.client :as http]
-            [bookmarx.common :refer [settings path server-path get-cookie set-cookie!]])
+            [bookmarx.common :refer [settings path server-path set-cookie!]])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
 
@@ -93,12 +94,12 @@
 (defn get-bookmarks "Request bookmarks from the server and set local state."
   [rev]
   (go (let [url (server-path "/api/bookmarks/since/" rev)
-            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))
+            response (<! (http/get url {:with-credentials? false}))
             bookmarks (into {} (map #(vector (:bookmark/id %) %) (get-in response [:body :bookmarks])))
             revision (get-in response [:body :revision])]
-        ;; Set the state.
-        (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
-        (set-cookie! :revision revision (* (:cache-refresh-hours (get-cookie :env)) 60 60))
+        ;; Set the revision.
+        (println "revision" revision)
+        (set-cookie! :revision revision (* (session/get :cache-refresh-hours) 60 60))
 
         ;; Set the bookmarks.
         (reset! session/state (merge @session/state bookmarks))
@@ -106,25 +107,25 @@
           (.setItem (.-localStorage js/window) "bookmarks"
                     (pr-str (into {} (remove #(keyword? (key %)) @session/state))))))))
 
-(defn get-csrf-token "Request an anti-forgery token from the server."
-  []
-  (go (let [url (server-path "/api/csrf-token")
-            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))]
-        (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"]))))))
-
 (defn load-bookmarks "Get bookmarks from the server and set local state."
   []
-  (if (cookies/get "auth-token")
-    (let [rev (js/parseInt (cookies/get "revision" 0))]
-      (when-not (zero? rev)
-        (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
-          (reset! session/state (merge @session/state bookmarks))))
-      (get-bookmarks rev))
-    (get-csrf-token)))
+  (println "load-bookmarks")
+  (let [rev (js/parseInt (cookies/get "revision" 0))]
+    (when-not (zero? rev)
+      (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
+        (session/put! :revision rev)
+        (reset! session/state (merge @session/state bookmarks))))
+    (get-bookmarks rev)))
+
+(defn get-environment "Request the environment and an anti-forgery token from the server."
+  []
+  (go (let [url (server-path "/api/environment")
+            response (<! (http/get url {:query-params {:csrf-token true} :with-credentials? false}))]
+        (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
+        (reset! session/state (merge @session/state (:body response))))))
 
 (defn get-settings "Request settings from the server and set session state."
   []
-  (println "get-settings" (pr-str @settings))
   (go (let [url (server-path "/api/settings")
             response (<! (http/get url {:with-credentials? false}))]
         (reset! settings (:body response)))))
@@ -145,6 +146,6 @@
                                     :headers {"x-csrf-token" (session/get :csrf-token)}}))
             auth-token (:auth-token (read-string (:body results)))]
         (if auth-token
-         (set-cookie! :auth-token auth-token (* (:auth-token-hours (get-cookie :env)) 60 60))
+         (set-cookie! :auth-token auth-token (* (session/get :auth-token-hours) 60 60))
          (session/put! :auth-token (:body results))))))
 

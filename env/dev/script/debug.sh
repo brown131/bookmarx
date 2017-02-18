@@ -5,5 +5,6 @@ if [ -f bookmarx.pid ]; then
 fi
 
 DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
+CLASSPATH=target/bookmarx.jar:target/bcpkix-jdk15on-1.55.jar:target/bcprov-jdk15on-1.55.jar
 
-nohup java $DEBUG -cp target/bookmarx.jar clojure.main -m bookmarx.server
+nohup java $DEBUG -cp $CLASSPATH clojure.main -m bookmarx.server & echo $! > bookmarx.pid

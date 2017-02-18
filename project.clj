@@ -107,6 +107,7 @@
                        :source-paths ["env/prod/clj"]
                        :resource-paths ["env/prod/resources"]
                        :prep-tasks ["compile" ["cljsbuild" "once" "min"]]
+                       :uberjar-exclusions [#"org/bouncycastle"]
                        :env {:production true}
                        :aot :all
                        :omit-source true}})

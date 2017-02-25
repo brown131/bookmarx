@@ -95,7 +95,7 @@
 
                    :source-paths ["env/dev/clj"]
                    :resource-paths ["env/dev/resources"]
-                   :plugins [[lein-figwheel "0.5.8"]
+                   :plugins [[lein-figwheel "0.5.9"]
                              [lein-less "1.7.5"]]
 
                    :injections [(require 'pjstadig.humane-test-output)

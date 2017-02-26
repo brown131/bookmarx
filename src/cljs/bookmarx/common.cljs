@@ -4,7 +4,6 @@
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [cemerick.url :refer [url url-decode]]
-            [cljs-http.client :as http]
             [cljs.reader :refer [read-string]])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
@@ -40,7 +39,7 @@
   [& args]
   (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
     (str protocol "://" host (if (> port 0) (str ":" port) "")
-         (str/join (cons (get-cookie :prefix) args)))))
+         (str/join (cons (get-cookie :prefix "/bookmarx") args)))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]

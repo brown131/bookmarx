@@ -124,7 +124,6 @@
 
 (defn get-settings "Request settings from the server and set session state."
   []
-  (println "get-settings" (pr-str @settings))
   (go (let [url (server-path "/api/settings")
             response (<! (http/get url {:with-credentials? false}))]
         (reset! settings (:body response)))))

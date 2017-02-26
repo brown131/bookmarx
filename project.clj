@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/core.async "0.3.441"]
+                 [org.clojure/core.async "0.3.441" :exclusions [org.clojure/tools.reader]]
                  [reagent "0.6.0"]
                  [reagent-forms "0.5.28"]
                  [reagent-utils "0.2.0"]
@@ -28,7 +28,7 @@
                  [com.taoensso/timbre "4.8.0"]
                  [org.clojure/clojurescript "1.9.494" :scope "provided"]
                  [secretary "1.2.3"]
-                 [venantius/accountant "0.1.9"]
+                 [venantius/accountant "0.1.9" :exclusions [org.clojure/tools.reader]]
                  [cljs-http "0.1.42"]
                  [clj-time "0.13.0"]
                  [figwheel-sidecar "0.5.9"]]

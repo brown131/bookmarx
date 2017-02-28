@@ -9,9 +9,7 @@
             [bookmarx.ds :as ds]))
 
 (def redirect-whitelist
-  [#"https://www.browncross.com/bookmarx/.*"
-   #"http://localhost:3000/.*"
-   #"http://localhost:3449/.*"])
+  [#"https://www.browncross.com/bookmarx/.*" #"http://localhost:\d+/.*"])
 
 (defn sign-token [token]
   (let [pkey (ks/private-key (io/resource (env :private-key)) (env :pass-phrase))]
@@ -32,7 +30,8 @@
 
 (defn wrap-auth-token [handler]
   (fn [request]
-    (let [{:keys [:user :exp]} (when-let [auth-token (get-in request [:cookies "auth-token" :value])]
+    (let [auth-token (get-in request [:cookies "auth-token" :value])
+          {:keys [:user :exp]} (when (and auth-token (not= auth-token "nil"))
                                  (read-string (String. (unsign-token auth-token))))]
       (if (and user exp (< (tc/to-long (t/now)) exp))
         (handler (assoc request :auth-user user))

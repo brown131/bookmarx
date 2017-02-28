@@ -1,15 +1,18 @@
 (ns bookmarx.login
-  (:require [clojure.string :as str]
+  (:require [cljs.core.async :refer [<!]]
             [reagent.core :refer [atom]]
-            [reagent.cookies :as cookies]
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields]]
             [accountant.core :as accountant]
             [cemerick.url :refer [url url-decode]]
             [cljs.reader :refer [read-string]]
+            [cljs-http.client :as http]
             [bookmarx.client :as client]
             [bookmarx.common :refer [path server-path get-cookie set-cookie!]]
-            [bookmarx.header :as header]))
+            [bookmarx.header :as header])
+  (:require-macros
+    [bookmarx.env :refer [cljs-env]]
+    [cljs.core.async.macros :refer [go]]))
 
 (defn row
   [label input]
@@ -25,18 +28,19 @@
      [row "Password" [:input.form-control {:field :password :id :password}]]]])
 
 (defn login [doc]
-  (client/login doc)
-  (let [auth-token (session/get :auth-token)]
-   ; (println "auth-token" auth-token)
-    (if (map? auth-token)
-      (swap! doc #(assoc % :error auth-token))
-      (let [redirect (get (:query (url (-> js/window .-location .-href))) "m")
-            env-map (read-string (str/replace (url-decode (cookies/get "env")) #"\+" " "))]
-        (reset! session/state (merge @session/state env-map))
-        (set-cookie! :auth-token auth-token (* (get-cookie :auth-token-hours) 60 60))
-        (client/load-bookmarks)
-        (client/get-settings)
-        (accountant/navigate! (path (if redirect redirect "/")))))))
+  (go (let [response (<! (http/post (server-path "/login")
+                                    {:edn-params @doc
+                                     :with-credentials? false
+                                     :headers {"x-csrf-token" (session/get :csrf-token)}}))
+            login-response (read-string (:body response))]
+        (if (:error login-response)
+          (swap! doc #(assoc % :error (:error login-response)))
+          (let [auth-token (:auth-token login-response)
+                redirect (get (:query (url (-> js/window .-location .-href))) "m")]
+            (set-cookie! :auth-token auth-token (* (cljs-env :auth-token-hours) 60 60))
+            (client/load-bookmarks)
+            (client/get-settings)
+            (accountant/navigate! (path (if redirect redirect "/"))))))))
 
 (defn editor [doc & body]
   [:div body

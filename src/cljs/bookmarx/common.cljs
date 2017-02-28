@@ -6,6 +6,7 @@
             [cemerick.url :refer [url url-decode]]
             [cljs.reader :refer [read-string]])
   (:require-macros
+    [bookmarx.env :refer [cljs-env]]
     [cljs.core.async.macros :refer [go]]))
 
 (defonce settings (atom :show-title false :show-url false :show-created false :show-last-visited false
@@ -26,20 +27,21 @@
 
 (defn set-cookie! "Set a cookie as an EDN value, also placing it in the session."
   [kw val & expire-secs]
-  (let [opts {:path (get-cookie :prefix)}
+  (let [opts {:path (cljs-env :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
     (cookies/set! (subs (str kw) 1) val opts)
+    (println "val" val)
     (session/put! kw val)))
 
 (defn path "Create a url with the path from the environment."
   [& args]
-  (str/join (cons (get-cookie :prefix) args)))
+  (str/join (cons (cljs-env :prefix) args)))
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
   (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
     (str protocol "://" host (if (> port 0) (str ":" port) "")
-         (str/join (cons (get-cookie :prefix "/bookmarx") args)))))
+         (str/join (cons (cljs-env :prefix) args)))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]

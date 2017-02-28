@@ -3,7 +3,9 @@
             [goog.window :as gwin]
             [bookmarx.client :refer [visit-bookmark]]
             [bookmarx.common :refer [settings path get-cookie set-cookie! parse-date]]
-            [bookmarx.header :as header]))
+            [bookmarx.header :as header])
+  (:require-macros
+    [bookmarx.env :refer [cljs-env]]))
 
 (enable-console-print!)
 
@@ -49,8 +51,8 @@
                 bookmark/visits] :as bookmark} (session/get bookmark-key)
         {:keys [show-title show-url show-rating show-created show-last-visited show-visits show-new
                 show-visited sort-on]} @settings
-        new-ticks (- (. js/Date (now)) (* (get-cookie :new-hours) ticks-in-hour))
-        last-visited-ticks (- (. js/Date (now)) (* (get-cookie :last-visited-hours) ticks-in-hour))]
+        new-ticks (- (. js/Date (now)) (* (cljs-env :new-hours) ticks-in-hour))
+        last-visited-ticks (- (. js/Date (now)) (* (cljs-env :last-visited-hours) ticks-in-hour))]
     ;; Links
     (if url
       [:div.bookmark_children {:key (str id "-key")}

@@ -1,8 +1,7 @@
 (ns bookmarx.pages
   (:require [hiccup.page :refer [include-js include-css html5]]
             [ring.util.response :as r]
-            [config.core :refer [env]]
-            [bookmarx.handler :refer [set-env-cookie]]))
+            [config.core :refer [env]]))
 
 (defn header []
   [:head
@@ -22,14 +21,7 @@
      (include-js "jquery/3.1.1/jquery.min.js")
      (include-js "bootstrap/3.3.7/js/bootstrap.min.js")]))
 
-(defn login-page-handler
+(defn page-handler
   [request]
   (-> (r/response page-template)
-      (r/header "content-type" "text/html; charset=utf-8")
-      (r/set-cookie "prefix" (env :prefix))))
-
-(defn secured-page-handler
-  [request]
-  (-> (r/response page-template)
-      (r/header "content-type" "text/html; charset=utf-8")
-      (set-env-cookie)))
+      (r/header "content-type" "text/html; charset=utf-8")))

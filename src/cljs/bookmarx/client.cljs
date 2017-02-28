@@ -2,13 +2,13 @@
   (:require [cljs.core.async :refer [<!]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
-            [accountant.core :as accountant]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url-decode]]
             [cljs.reader :refer [read-string]]
             [cljs-http.client :as http]
             [bookmarx.common :refer [settings path server-path get-cookie set-cookie!]])
   (:require-macros
+    [bookmarx.env :refer [cljs-env]]
     [cljs.core.async.macros :refer [go]]))
 
 (defn get-edn-params "Remove temporary fields from the page document."
@@ -98,7 +98,7 @@
             revision (get-in response [:body :revision])]
         ;; Set the state.
         (session/put! :csrf-token (url-decode (get-in response [:headers "csrf-token"])))
-        (set-cookie! :revision revision (* (:cache-refresh-hours (get-cookie :env)) 60 60))
+        (set-cookie! :revision revision (* (cljs-env :cache-refresh-hours) 60 60))
 
         ;; Set the bookmarks.
         (reset! session/state (merge @session/state bookmarks))
@@ -114,8 +114,10 @@
 
 (defn load-bookmarks "Get bookmarks from the server and set local state."
   []
-  (if (cookies/get "auth-token")
-    (let [rev (js/parseInt (cookies/get "revision" 0))]
+  (println "load" (get-cookie :auth-token))
+  (if (get-cookie :auth-token)
+    (let [rev (js/parseInt (get-cookie "revision" 0))]
+      (println "rev" rev)
       (when-not (zero? rev)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
           (reset! session/state (merge @session/state bookmarks))))
@@ -134,16 +136,4 @@
                      {:edn-params @settings
                       :with-credentials? false
                       :headers {"x-csrf-token" (session/get :csrf-token)}}))))
-
-(defn login
-  "Post credentials to server to get a authentication token."
-  [doc]
-  (go (let [results (<! (http/post (server-path "/login")
-                                   {:edn-params @doc
-                                    :with-credentials? false
-                                    :headers {"x-csrf-token" (session/get :csrf-token)}}))
-            auth-token (:auth-token (read-string (:body results)))]
-        (if auth-token
-         (set-cookie! :auth-token auth-token (* (:auth-token-hours (get-cookie :env)) 60 60))
-         (session/put! :auth-token (:body results))))))
 

@@ -22,26 +22,24 @@
 
 (defroutes public-routes
            ;; Authentication
-           (GET "/login" [] login-page-handler)
+           (GET "/login" [] page-handler)
            (GET "/api/csrf-token" [] (set-csrf-token {:status 200}))
-           (POST "/login" {credentials :edn-params} (-> (post-login credentials)
-                                                        (set-env-cookie))))
+           (POST "/login" {credentials :edn-params} (post-login credentials)))
 
 (defroutes secured-routes
            ;; Views
-           (GET "/" [] secured-page-handler)
-           (GET "/add" [] secured-page-handler)
-           (GET "/about" [] secured-page-handler)
-           (GET "/folder" [] secured-page-handler)
-           (GET "/icon" [] secured-page-handler)
-           (GET "/logout" [] secured-page-handler)
-           (GET "/search" [] secured-page-handler)
-           (GET "/settings" [] secured-page-handler)
+           (GET "/" [] page-handler)
+           (GET "/add" [] page-handler)
+           (GET "/about" [] page-handler)
+           (GET "/folder" [] page-handler)
+           (GET "/icon" [] page-handler)
+           (GET "/logout" [] page-handler)
+           (GET "/search" [] page-handler)
+           (GET "/settings" [] page-handler)
 
            ;; REST API
            (GET "/api/bookmarks/since/:rev" [rev] (-> (get-bookmarks-since rev)
-                                                      (set-csrf-token)
-                                                      (set-env-cookie)))
+                                                      (set-csrf-token)))
            (GET "/api/settings" [] (get-settings))
            (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
            (POST "/api/settings" {settings :edn-params} (post-settings settings))
@@ -76,8 +74,7 @@
       wrap-cookies
       wrap-edn-params
       wrap-transit-response
-      (wrap-cors :access-control-allow-origin [#"https://www.browncross.com"
-                                               #"http://localhost:\d+"]
+      (wrap-cors :access-control-allow-origin [#"https://www.browncross.com" #"http://localhost:\d+"]
                  :access-control-allow-methods [:get :post :put :delete])))
 
  (defn -main [& args]

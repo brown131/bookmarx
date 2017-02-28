@@ -11,9 +11,6 @@
 
 (timbre/refer-timbre)
 
-;; Client environment properties.
-(defonce env-props [:prefix :new-hours :last-visited-hours :auth-token-hours :cache-refresh-hours])
-
 (defn build-response "Build a response with the changed bookmarks."
   [changed-ids]
   (let [latest-revision (ds/get-latest-revision)]
@@ -31,10 +28,6 @@
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
 
-(defn set-env-cookie "Add a cookie with environment properties to an HTTP response ."
-  [response]
-  (r/set-cookie response "env" (pr-str (into {} (map #(vector % (env %)) env-props)))))
-
 (defn set-csrf-token "Add an anti-forgery token to an HTTP response."
   [response]
   (r/header response "csrf-token" *anti-forgery-token*))
@@ -43,7 +36,7 @@
   [{:keys [:user :password]}]
   (if-let [auth-token (auth/create-auth-token user password)]
     {:status 201 :body (pr-str {:auth-token auth-token})}
-    {:status 401 :body "Invalid credentials."}))
+    {:status 401 :body (pr-str {:error "Invalid credentials."})}))
 
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]

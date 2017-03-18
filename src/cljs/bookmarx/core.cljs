@@ -15,8 +15,7 @@
             [bookmarx.search :as search]
             [bookmarx.settings :as settings])
   (:require-macros
-    [bookmarx.env :refer [cljs-env]]
-    [cljs.core.async.macros :refer [go]]))
+   [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
 
@@ -51,7 +50,7 @@
     (set-cookie! :active 1))
 
   ;; Setup navigation.
-  (secretary/set-config! :prefix (cljs-env :prefix))
+  (secretary/set-config! :prefix "#")
   (accountant/configure-navigation!
    {:nav-handler #(secretary/dispatch! %)
     :path-exists? #(secretary/locate-route %)})

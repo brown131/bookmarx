@@ -116,7 +116,7 @@
   []
   (println "load" (get-cookie :auth-token))
   (if (get-cookie :auth-token)
-    (let [rev (js/parseInt (get-cookie "revision" 0))]
+    (let [rev (js/parseInt (get-cookie :revision 0))]
       (println "rev" rev)
       (when-not (zero? rev)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]

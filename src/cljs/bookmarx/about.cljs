@@ -1,13 +1,12 @@
 (ns bookmarx.about
-  (:require [reagent.session :as session]
-            [bookmarx.common :refer [path]]
+  (:require [bookmarx.common :refer [path]]
             [bookmarx.header :as header]))
 
 (defn about-page "Render the About page."
   []
   [:div.col-sm-12
    [header/header]
-   [:h2 "About Bookmarx"]
+   [:h2 "About Bookmarx 2.3"]
    [:div "This application was written by " [:a {:href "mailto:brown131@yahoo.com"} "Scott Brown"] 
     " in " [:a {:href "https//clojure.org"} "Clojure"] " and " 
     [:a {:href "https://github.com/clojure/clojurescript"} "ClojureScript"] ". It is essentially a rewrite, sans gold-plating, of the excellent " [:a {:href "http://bookmark4u.sourceforge.net"} "Bookmark4U"]

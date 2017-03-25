@@ -13,6 +13,8 @@
                         :show-visits false :show-rating false :show-new false :show-visited false
                         :sort-on :title))
 
+(defonce ticks-in-hour (* 1000 60 60))
+
 (declare set-cookie!)
 
 (defn get-cookie
@@ -30,7 +32,6 @@
   (let [opts {:path (cljs-env :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
     (cookies/set! (subs (str kw) 1) val opts)
-    (println "val" val)
     (session/put! kw val)))
 
 (defn path "Create a url with the path from the environment."
@@ -61,3 +62,10 @@
     (js/Date. (js/parseInt (nth date-parts 3)) month (js/parseInt (nth date-parts 2))
               (js/parseInt (nth time-parts 0)) (js/parseInt (nth time-parts 1))
               (js/parseInt(nth time-parts 2)))))
+
+(defn get-route "Gets the route to a menu in a tree by id."
+  ([id] (get-route id [id]))
+  ([id route]
+   (if-let [parent (:bookmark/parent-id (session/get id))]
+     (recur parent (cons parent route))
+     route)))

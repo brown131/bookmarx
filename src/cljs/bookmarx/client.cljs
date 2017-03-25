@@ -1,6 +1,5 @@
 (ns bookmarx.client
   (:require [cljs.core.async :refer [<!]]
-            [reagent.cookies :as cookies]
             [reagent.session :as session]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url-decode]]
@@ -114,10 +113,8 @@
 
 (defn load-bookmarks "Get bookmarks from the server and set local state."
   []
-  (println "load" (get-cookie :auth-token))
   (if (get-cookie :auth-token)
     (let [rev (js/parseInt (get-cookie :revision 0))]
-      (println "rev" rev)
       (when-not (zero? rev)
         (let [bookmarks (read-string (.getItem (.-localStorage js/window) "bookmarks"))]
           (reset! session/state (merge @session/state bookmarks))))

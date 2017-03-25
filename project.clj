@@ -1,4 +1,4 @@
-(defproject bookmarx "0.1.0-SNAPSHOT"
+(defproject bookmarx "1.1.0-SNAPSHOT"
   :description "Bookmarx: Bookmark management application"
   :url "https://www.browncross.com/FIXME"
   :license {:name "Eclipse Public License"

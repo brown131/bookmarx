@@ -154,8 +154,9 @@
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
   [id {:keys [:bookmark/title :bookmark/parent-id] :as bookmark}]
   (try
-    (infof "put-bookmark %s %s" id (pr-str bookmark))
-    (let [orig-bookmark (get @bookmarks id)
+    (infof "put-bookmark %s %s" (str id) (pr-str bookmark))
+    (let [bookmark-id (Integer/parseInt id)
+          orig-bookmark (get @bookmarks bookmark-id)
           changed-ids (if (= parent-id (:bookmark/parent-id orig-bookmark))
                         (update-bookmark bookmark orig-bookmark)
                         (move-bookmark bookmark orig-bookmark))]

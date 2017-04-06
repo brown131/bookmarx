@@ -2,7 +2,7 @@
 
 #### Version 2.3
 
-A personal bookmark tracker written in [Clojure](https//clojure.org) and [ClojureScript](https://github.com/clojure/clojurescript). It is essentially a rewrite, sans gold-plating, of the excellent [Bookmark4U](http://bookmark4u.sourceforge.net) which I used for many years, and whose interface and source code have unfortunately become pretty dated. Kudos to the authors of this application.
+A personal bookmark tracker written in [Clojure](https://clojure.org) and [ClojureScript](https://github.com/clojure/clojurescript). It is essentially a rewrite, sans gold-plating, of the excellent [Bookmark4U](http://bookmark4u.sourceforge.net) which I used for many years, and whose interface and source code have unfortunately become pretty dated. Kudos to the authors of this application.
 
 On the front-end it is using [Reagent](https://reagent-project.github.io/), which is a ClojureScript wrapper for the [React](https://facebook.github.io/react/) user interface framework. The user interface style is the ubiquitous [Bootstrap](http://getbootstrap.com) framework. On the back-end it is using [Redis](https://redis.io/) for persistence.
 

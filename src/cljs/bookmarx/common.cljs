@@ -21,7 +21,7 @@
   "Get an EDN cookie, first looking in the session. If not found it wll return the default."
   [kw & default]
   (if-let [val (session/get kw)] val
-    (if-let [cookie (cookies/get (subs (str kw) 1))]
+    (if-let [cookie (cookies/get (name kw))]
       (let [val (read-string (str/replace (url-decode cookie) #"\+" " "))]
         (session/put! kw val)
         val)
@@ -31,7 +31,7 @@
   [kw val & expire-secs]
   (let [opts {:path (cljs-env :prefix)}
         opts (if (empty? expire-secs) opts (assoc opts :max-age (first expire-secs)))]
-    (cookies/set! (subs (str kw) 1) val opts)
+    (cookies/set! (name kw) val opts)
     (session/put! kw val)))
 
 (defn path "Create a url with the path from the environment."

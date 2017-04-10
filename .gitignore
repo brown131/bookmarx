@@ -11,6 +11,7 @@
 .#*
 profiles.clj
 config.edn
+auth_privkey.pem
 .nrepl-port
 .AppleDouble
 .DS_Store

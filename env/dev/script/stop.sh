@@ -1,4 +1,8 @@
 #!/bin/bash
 
-kill -9 $(cat bookmarx.pid)
-rm bookmarx.pid
+PID=bookmarx.pid
+
+if [ -f $PID ]; then
+    kill -9 $(cat $PID)
+    rm $PID
+fi

@@ -1,7 +1,11 @@
 #!/bin/bash
 
-if [ -f bookmarx.pid ]; then
-    kill -9 $(cat bookmarx.pid)
+PID=/var/run/bookmarx/bookmarx.pid
+LOG=/var/log/bookmarx.log
+
+if [ -f $PID ]; then
+    kill -9 $(cat $PID)
 fi
 
-nohup lein trampoline run server > /var/log/bookmarx.log & echo $! > /var/run/bookmarx.pid
+nohup lein trampoline run server > $LOG &
+echo $! > $PID

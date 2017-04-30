@@ -1,4 +1,8 @@
 #!/bin/bash
 
-kill -9 $(cat /var/run/bookmarx.pid)
-rm /var/run/bookmarx.pid
+PID=/var/run/bookmarx/bookmarx.pid
+
+if [ -f $PID ]; then
+    kill -9 $(cat $PID)
+    rm $PID
+fi

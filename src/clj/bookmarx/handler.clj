@@ -90,11 +90,10 @@
     (catch Exception e (errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
-  [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark}
-   orig-bookmark]
+  [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark} orig-bookmark]
   ;; Change the fields in the bookmark.
   (swap! bookmarks update id
-         #(merge % (if url (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+         #(merge % (if url (select-keys bookmark [:bookmark/title :bookmark/url :bookmark/rating
                                                   :bookmark/icon :bookmark/icon-color])
                            (select-keys bookmark [:bookmark/title]))))
 
@@ -102,7 +101,7 @@
   (if (= title (:bookmark/title orig-bookmark)) [id] [id parent-id]))
 
 (defn move-bookmark "Move a bookmark to a different folder."
-  [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark} orig-bookmark]
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url] :as bookmark}]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
         ancestor-ids  ; Find the ancestors of the new parent.
         (loop [ancestor-ids [parent-id id]]
@@ -130,7 +129,7 @@
     ;; Change the fields in the bookmark.
     (swap! bookmarks update id
            #(merge % (if url
-                       (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+                       (select-keys bookmark [:bookmark/title :bookmark/url :bookmark/rating
                                               :bookmark/icon :bookmark/icon-color])
                        (select-keys bookmark [:bookmark/title]))))
 
@@ -154,12 +153,12 @@
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
   [id {:keys [:bookmark/title :bookmark/parent-id] :as bookmark}]
   (try
-    (infof "put-bookmark %s %s" (str id) (pr-str bookmark))
+    (infof "put-bookmark %s %s" id (pr-str bookmark))
     (let [bookmark-id (Integer/parseInt id)
           orig-bookmark (get @bookmarks bookmark-id)
           changed-ids (if (= parent-id (:bookmark/parent-id orig-bookmark))
                         (update-bookmark bookmark orig-bookmark)
-                        (move-bookmark bookmark orig-bookmark))]
+                        (move-bookmark bookmark))]
       ;; Re-sort the bookmarks in the parent if the title changed.
       (when-not (= title (:bookmark/title orig-bookmark))
         (swap! bookmarks update parent-id sort-folder-children))

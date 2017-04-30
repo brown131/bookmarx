@@ -93,7 +93,7 @@
   [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark} orig-bookmark]
   ;; Change the fields in the bookmark.
   (swap! bookmarks update id
-         #(merge % (if url (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+         #(merge % (if url (select-keys bookmark [:bookmark/title :bookmark/url :bookmark/rating
                                                   :bookmark/icon :bookmark/icon-color])
                            (select-keys bookmark [:bookmark/title]))))
 
@@ -101,7 +101,7 @@
   (if (= title (:bookmark/title orig-bookmark)) [id] [id parent-id]))
 
 (defn move-bookmark "Move a bookmark to a different folder."
-  [{:keys [:bookmark/id :bookmark/parent-id :bookamrk/url] :as bookmark}]
+  [{:keys [:bookmark/id :bookmark/parent-id :bookmark/url] :as bookmark}]
   (let [orig-parent-id (:bookmark/parent-id (get @bookmarks id))
         ancestor-ids  ; Find the ancestors of the new parent.
         (loop [ancestor-ids [parent-id id]]
@@ -129,7 +129,7 @@
     ;; Change the fields in the bookmark.
     (swap! bookmarks update id
            #(merge % (if url
-                       (select-keys bookmark [:bookmark/title :boomark/url :bookmark/rating
+                       (select-keys bookmark [:bookmark/title :bookmark/url :bookmark/rating
                                               :bookmark/icon :bookmark/icon-color])
                        (select-keys bookmark [:bookmark/title]))))
 

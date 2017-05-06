@@ -11,6 +11,8 @@
 
 (timbre/refer-timbre)
 
+(def trash-id -1)
+
 (defn build-response "Build a response with the changed bookmarks."
   [changed-ids]
   (let [latest-revision (ds/get-latest-revision)]
@@ -21,9 +23,11 @@
   [folder]
   (let [[links folders] (map vec ((juxt filter remove) #(:bookmark/url (get @bookmarks %))
                                    (:bookmark/children folder)))
-        make-sort-key #(if (:bookmark/title (get @bookmarks %))
+        make-sort-key #(cond
+                         (= (:bookmark/id (get @bookmarks %)) trash-id) "~~~TRASH"
+                         (:bookmark/title (get @bookmarks %))
                          (str/upper-case (:bookmark/title (get @bookmarks %)))
-                         (do (warn (str "NO TITLE" % (str (get @bookmarks %)))) ""))]
+                         :else (do (warn (str "NO TITLE" % (str (get @bookmarks %)))) ""))]
     (update folder :bookmark/children
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
@@ -236,8 +240,7 @@
   []
   (try
     (infof "delete-trash")
-    (let [trash-id -1
-          {:keys [:bookmark/parent-id :bookmark/link-count]} (get @bookmarks trash-id)
+    (let [{:keys [:bookmark/parent-id]} (get @bookmarks trash-id)
           changed-ids [parent-id trash-id]
           deleted-ids (get-in @bookmarks [trash-id :bookmark/children])]
       ;; Remove deleted bookmarks from the cache.
@@ -247,7 +250,6 @@
       (swap! bookmarks update-in [trash-id :bookmark/children] vector)
 
       ;; Subtract the link count from the ancestors.
-      (swap! bookmarks update-in [parent-id :bookmark/link-count] #(- % link-count))
       (swap! bookmarks update-in [trash-id :bookmark/link-count] (fn [_] 0))
 
       ;; Persist the changes.

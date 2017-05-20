@@ -1,6 +1,7 @@
 /target
 /resources/public/css
 /resources/public/js
+/resources/bookmarks.edn
 /.lein-*
 /.idea
 /lib

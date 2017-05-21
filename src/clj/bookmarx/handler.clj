@@ -133,9 +133,9 @@
     ;; Change the fields in the bookmark.
     (swap! bookmarks update id
            #(merge % (if url
-                       (select-keys bookmark [:bookmark/title :bookmark/url :bookmark/rating
-                                              :bookmark/icon :bookmark/icon-color])
-                       (select-keys bookmark [:bookmark/title]))))
+                       (select-keys bookmark [:bookmark/parent-id :bookmark/title :bookmark/url
+                                              :bookmark/rating :bookmark/icon :bookmark/icon-color])
+                       (select-keys bookmark [:bookmark/parent-id :bookmark/title]))))
 
     ;; Add the link count to the ancestors.
     (dorun (map #(when (get-in @bookmarks [% :bookmark/link-count])

@@ -9,7 +9,7 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
    [:link {:rel "icon" :type "image/png" :href "favicon.ico"}]
-   [:link {:rel "mask-icon" :type "image/svg" :href "images/black-star.svg" color="black"}]
+   [:link {:rel "mask-icon" :type "image/svg" :href "images/black-star.svg" :color "black"}]
    (include-css (if (env :dev) "css/site.css" "css/site.min.css"))
    (include-css "bootstrap/3.3.7/css/bootstrap.min.css")])
 

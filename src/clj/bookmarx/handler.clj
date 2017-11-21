@@ -1,7 +1,7 @@
 (ns bookmarx.handler
   (:require [clojure.set :refer [difference]]
             [clojure.string :as str]
-            [taoensso.timbre :as timbre]
+            [taoensso.timbre :as t]
             [ring.middleware.anti-forgery :refer :all]
             [ring.util.response :as r]
             [config.core :refer [env]]
@@ -9,7 +9,7 @@
             [bookmarx.ds :as ds :refer [bookmarks]])
   (:import java.util.Date))
 
-(timbre/refer-timbre)
+(t/refer-timbre)
 
 (def trash-id -1)
 
@@ -27,7 +27,7 @@
                          (= (:bookmark/id (get @bookmarks %)) trash-id) "~~~TRASH"
                          (:bookmark/title (get @bookmarks %))
                          (str/upper-case (:bookmark/title (get @bookmarks %)))
-                         :else (do (warn (str "NO TITLE" % (str (get @bookmarks %)))) ""))]
+                         :else (do (t/warn (str "NO TITLE" % (str (get @bookmarks %)))) ""))]
     (update folder :bookmark/children
             (fn [_] (into [] (concat (if (empty? folders) folders (sort-by make-sort-key folders))
                                      (if (empty? links) links (sort-by make-sort-key links))))))))
@@ -45,7 +45,7 @@
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]
   (try
-    (infof "get-revised-bookmarks %s" rev)
+    (t/infof "get-revised-bookmarks %s" rev)
     (let [rev-num (Integer/parseInt rev)
           changed-bookmarks
           (into [] (vals (remove #(or (keyword? (key %))
@@ -54,14 +54,14 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body {:bookmarks changed-bookmarks :revision latest-revision}})
-      (catch Exception e (errorf "Error %s" (.toString e)))))
+      (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [{:keys [:bookmark/url :bookmark/parent-id] :as bookmark}]
   (try
-    (infof "post-bookmark %s" (pr-str bookmark))
+    (t/infof "post-bookmark %s" (pr-str bookmark))
     (let [bookmark-id (ds/inc-last-bookmark-id!)
-          now (java.util.Date.)
+          now (Date.)
           new-bookmark (assoc (if url bookmark (assoc bookmark :bookmark/children []
                                                                :bookmark/link-count 0))
                          :bookmark/id bookmark-id :bookmark/created now :bookmark/last-visited now
@@ -91,7 +91,7 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn update-bookmark "Update a bookmark."
   [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark} orig-bookmark]
@@ -157,7 +157,7 @@
 (defn put-bookmark "Update a bookmark in the database for an HTTP request."
   [id {:keys [:bookmark/title :bookmark/parent-id] :as bookmark}]
   (try
-    (infof "put-bookmark %s %s" id (pr-str bookmark))
+    (t/infof "put-bookmark %s %s" id (pr-str bookmark))
     (let [bookmark-id (Integer/parseInt id)
           orig-bookmark (get @bookmarks bookmark-id)
           changed-ids (if (= parent-id (:bookmark/parent-id orig-bookmark))
@@ -174,12 +174,12 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn put-bookmark-visit "Update visit information of a bookmark in the database for an HTTP request."
   [id]
   (try
-    (infof "put-bookmark-visit %s" id)
+    (t/infof "put-bookmark-visit %s" id)
     (let [bookmark-id (Integer/parseInt id)]
       ;; Update the last visited and number of visits.
       (swap! bookmarks assoc-in [bookmark-id :bookmark/last-visited] (Date.))
@@ -194,12 +194,12 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response [bookmark-id])})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
   [id]
   (try
-    (infof "delete-bookmark %s" id)
+    (t/infof "delete-bookmark %s" id)
     (let [bookmark-id (Integer/parseInt id)
           {:keys [:bookmark/parent-id :bookmark/link-count]} (get @bookmarks bookmark-id)
           changed-ids
@@ -234,12 +234,12 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids))})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn delete-trash "Delete bookmarks from the trash in the database."
   []
   (try
-    (infof "delete-trash")
+    (t/infof "delete-trash")
     (let [{:keys [:bookmark/parent-id]} (get @bookmarks trash-id)
           changed-ids [parent-id trash-id]
           deleted-ids (get-in @bookmarks [trash-id :bookmark/children])]
@@ -262,7 +262,7 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids deleted-ids)})
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn get-settings "Get all settings and return them in an HTTP response."
   []
@@ -271,13 +271,13 @@
     {:status 200
      :headers {"content-type" "application/edn"}
      :body (ds/get-settings)}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))
 
 (defn post-settings "Add settings into the database for an HTTP request."
   [settings]
   (try
-    (infof "post-settings %s" (pr-str settings))
+    (t/infof "post-settings %s" (pr-str settings))
     (ds/save-settings! settings)
     {:status 201
      :headers {"content-type" "application/edn"}}
-    (catch Exception e (errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error %s" (.toString e)))))

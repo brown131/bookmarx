@@ -45,8 +45,9 @@
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]
   (try
-    (t/infof "get-revised-bookmarks %s" rev)
-    (let [rev-num (Integer/parseInt rev)
+    (infof "get-bookmarks-since %s" rev)
+    (let [rev-num (when-not (empty? rev) (read-string rev))
+          rev-num (if (integer? rev-num) rev-num 0)
           changed-bookmarks
           (into [] (vals (remove #(or (keyword? (key %))
                                       (<= (:bookmark/revision (val %)) rev-num)) @bookmarks)))

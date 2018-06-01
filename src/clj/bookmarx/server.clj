@@ -2,7 +2,7 @@
   (:require [compojure.core :refer [GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [config.core :refer [env]]
-            [taoensso.timbre :as timbre]
+            [taoensso.timbre :as t]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [ring.middleware.cookies :refer [wrap-cookies]]
@@ -18,7 +18,7 @@
             [bookmarx.pages :refer :all])
   (:gen-class))
 
-(timbre/refer-timbre)
+(t/refer-timbre)
 
 (defroutes public-routes
            ;; Authentication
@@ -78,9 +78,9 @@
                  :access-control-allow-methods [:get :post :put :delete])))
 
  (defn -main [& args]
-   (timbre/set-config! (dissoc (env :log-config) :fname))
-   (timbre/merge-config!
-     {:appenders {:spit (timbre/spit-appender {:fname (:fname (env :log-config))})}})
+   (t/set-config! (dissoc (env :log-config) :fname))
+   (t/merge-config!
+     {:appenders {:spit (t/spit-appender {:fname (:fname (env :log-config))})}})
 
    (cache-bookmarks)
 

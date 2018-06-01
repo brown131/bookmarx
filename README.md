@@ -1,4 +1,4 @@
-# Bookmarx ![alt text](https://www.browncross.com/bookmarx/images/black-star.png "Bookmarx")
+# Bookmarx ![Bookmarx](/resources/public/images/black-star.png?raw=true)
 
 #### Version 2.3
 

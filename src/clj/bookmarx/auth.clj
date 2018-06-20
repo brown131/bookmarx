@@ -42,7 +42,7 @@
     (if (:auth-user request)
       (handler request)
       {:status 302
-       :headers {"Location " (str (env :prefix) "/login?m=" (:uri request))}})))
+       :headers {"Location" (str (env :prefix) "/login?m=" (:uri request))}})))
 
 (defn wrap-authorized-redirects [handler]
   (fn [request]

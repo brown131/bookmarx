@@ -1,6 +1,6 @@
 (defproject bookmarx "2.3"
   :description "Bookmarx: Bookmark management application"
-  :url "https://www.browncross.com/FIXME"
+  :url "http://www.browncross.com/bookmarx/"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 

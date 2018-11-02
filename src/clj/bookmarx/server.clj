@@ -74,7 +74,7 @@
       wrap-cookies
       wrap-edn-params
       wrap-transit-response
-      (wrap-cors :access-control-allow-origin [#"https://www.browncross.com" #"http://localhost:\d+"]
+      (wrap-cors :access-control-allow-origin [#"http[s]*://www.browncross.com" #"http://localhost:\d+"]
                  :access-control-allow-methods [:get :post :put :delete])))
 
  (defn -main [& args]

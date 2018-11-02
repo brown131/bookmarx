@@ -9,7 +9,7 @@
             [bookmarx.ds :as ds]))
 
 (def redirect-whitelist
-  [#"https://www.browncross.com/bookmarx/.*" #"http://localhost:\d+/.*"])
+  [#"http[s]*://www.browncross.com/bookmarx/.*" #"http://localhost:\d+/.*"])
 
 (defn sign-token [token]
   (let [pkey (ks/private-key (io/resource (env :private-key)) (env :pass-phrase))]

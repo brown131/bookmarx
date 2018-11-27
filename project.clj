@@ -9,7 +9,7 @@
                  [reagent "0.8.1"]
                  [reagent-forms "0.5.43"]
                  [reagent-utils "0.3.1"]
-                 [ring "1.7.1"]
+                 [ring "1.7.1":exclusions [ring/ring-codec]]
                  [ring/ring-defaults "0.3.2"]
                  [ring-cors "0.1.12"]
                  [ring-server "0.5.0"]
@@ -26,9 +26,11 @@
                  [com.cemerick/url "0.1.1"]
                  [yogthos/config "1.1.1"]
                  [com.taoensso/timbre "4.10.0"]
-                 [org.clojure/clojurescript "1.10.439"]
+                 [org.clojure/clojurescript "1.10.439" :exclusions [com.google.errorprone/error_prone_annotations
+                                                                    com.google.code.findbugs/jsr305
+                                                                    com.cognitect/transit-clj]]
                  [secretary "1.2.3"]
-                 [venantius/accountant "0.2.4" ]
+                 [venantius/accountant "0.2.4"]
                  [cljs-http "0.1.45"]
                  [clj-time "0.15.1"]
                  [figwheel-sidecar "0.5.17"]]
@@ -88,15 +90,15 @@
   :profiles {:dev {:repl-options {:init-ns bookmarx.repl}
 
                    :dependencies [[ring/ring-mock "0.3.2"]
-                                  [ring/ring-devel "1.7.1"]
-                                  [figwheel-sidecar "0.5.17"]
+                                  [ring/ring-devel "1.7.1" :exclusions [ring/ring-codec]]
+                                  [figwheel-sidecar "0.5.17" :exclusions [args4j lcom.cognitect/transit-clj]]
                                   [org.clojure/tools.nrepl "0.2.13"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [pjstadig/humane-test-output "0.9.0"]]
 
                    :source-paths ["env/dev/clj"]
                    :resource-paths ["env/dev/resources"]
-                   :plugins [[lein-figwheel "0.5.9"]
+                   :plugins [[lein-figwheel "0.5.17"]
                              [lein-less "1.7.5"]]
 
                    :injections [(require 'pjstadig.humane-test-output)

@@ -45,7 +45,7 @@
 (defn get-bookmarks-since "Get bookmarks greater than a revision number in an HTTP request."
   [rev]
   (try
-    (infof "get-bookmarks-since %s" rev)
+    (t/infof "get-bookmarks-since %s" rev)
     (let [rev-num (when-not (empty? rev) (read-string rev))
           rev-num (if (integer? rev-num) rev-num 0)
           changed-bookmarks
@@ -240,7 +240,7 @@
 (defn delete-trash "Delete bookmarks from the trash in the database."
   []
   (try
-    (t/infof "delete-trash")
+    (t/info "delete-trash")
     (let [{:keys [:bookmark/parent-id]} (get @bookmarks trash-id)
           changed-ids [parent-id trash-id]
           deleted-ids (get-in @bookmarks [trash-id :bookmark/children])]
@@ -268,7 +268,7 @@
 (defn get-settings "Get all settings and return them in an HTTP response."
   []
   (try
-    (info "get-settings")
+    (t/info "get-settings")
     {:status 200
      :headers {"content-type" "application/edn"}
      :body (ds/get-settings)}

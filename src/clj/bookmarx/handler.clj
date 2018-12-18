@@ -7,7 +7,7 @@
             [config.core :refer [env]]
             [bookmarx.auth :as auth]
             [bookmarx.ds :as ds :refer [bookmarks]])
-  (:import java.util.Date))
+  (:import [java.util Date]))
 
 (t/refer-timbre)
 

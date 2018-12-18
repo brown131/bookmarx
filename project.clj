@@ -26,17 +26,15 @@
                  [com.cemerick/url "0.1.1"]
                  [yogthos/config "1.1.1"]
                  [com.taoensso/timbre "4.10.0"]
-                 [org.clojure/clojurescript "1.10.439" :exclusions [com.google.errorprone/error_prone_annotations
-                                                                    com.google.code.findbugs/jsr305
-                                                                    com.cognitect/transit-clj]]
+                 [org.clojure/clojurescript "1.10.439"]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.2.4"]
                  [cljs-http "0.1.45"]
                  [clj-time "0.15.1"]
                  [figwheel-sidecar "0.5.17"]]
 
-  :plugins [[lein-cljsbuild "1.1.1"]
-            [lein-asset-minifier "0.2.7" :exclusions [org.clojure/clojure]]]
+  :plugins [[lein-cljsbuild "1.1.7"]
+            [lein-asset-minifier "0.4.5" :exclusions [org.clojure/clojure]]]
 
   :ring {:handler bookmarx.handler/app
          :uberwar-name "bookmarx.war"}

@@ -34,7 +34,7 @@
                  [figwheel-sidecar "0.5.17"]]
 
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-asset-minifier "0.4.5" :exclusions [org.clojure/clojure]]]
+            [lein-asset-minifier "0.4.5"]]
 
   :ring {:handler bookmarx.handler/app
          :uberwar-name "bookmarx.war"}

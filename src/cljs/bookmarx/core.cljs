@@ -7,15 +7,13 @@
             [bookmarx.about :as about]
             [bookmarx.add :as add]
             [bookmarx.client :refer [load-bookmarks get-settings]]
-            [bookmarx.common :refer [path server-path set-cookie! get-cookie]]
+            [bookmarx.common :refer [path set-cookie!]]
             [bookmarx.home :as home]
             [bookmarx.folder :as folder]
             [bookmarx.icon :as icon]
             [bookmarx.login :as login]
             [bookmarx.search :as search]
-            [bookmarx.settings :as settings])
-  (:require-macros
-   [cljs.core.async.macros :refer [go]]))
+            [bookmarx.settings :as settings]))
 
 (enable-console-print!)
 

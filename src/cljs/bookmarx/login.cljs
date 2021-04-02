@@ -1,14 +1,15 @@
 (ns bookmarx.login
   (:require [cljs.core.async :refer [<!]]
+            [clojure.string :as s]
             [reagent.core :refer [atom]]
             [reagent.session :as session]
             [reagent-forms.core :refer [bind-fields]]
             [accountant.core :as accountant]
-            [cemerick.url :refer [url url-decode]]
+            [cemerick.url :refer [url]]
             [cljs.reader :refer [read-string]]
             [cljs-http.client :as http]
             [bookmarx.client :as client]
-            [bookmarx.common :refer [path server-path get-cookie set-cookie!]]
+            [bookmarx.common :refer [path server-path set-cookie!]]
             [bookmarx.header :as header])
   (:require-macros
     [bookmarx.env :refer [cljs-env]]
@@ -36,11 +37,11 @@
         (if (:error login-response)
           (swap! doc #(assoc % :error (:error login-response)))
           (let [auth-token (:auth-token login-response)
-                redirect (get (:query (url (-> js/window .-location .-href))) "m")]
+                redirect (path (or (get (:query (url (-> js/window .-location .-href))) "m") "/"))]
             (set-cookie! :auth-token auth-token (* (cljs-env :auth-token-hours) 60 60))
             (client/load-bookmarks)
             (client/get-settings)
-            (accountant/navigate! (path (if redirect redirect "/"))))))))
+            (accountant/navigate! redirect))))))
 
 (defn editor [doc & body]
   [:div body

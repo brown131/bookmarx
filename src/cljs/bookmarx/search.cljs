@@ -2,7 +2,6 @@
   (:require [clojure.string :as str]
             [reagent.session :as session]
             [goog.window :as gwin]
-            [taoensso.timbre :as log]
             [bookmarx.client :refer [visit-bookmark]]
             [bookmarx.common :refer [ticks-in-hour settings path set-cookie! parse-date get-route]]
             [bookmarx.header :as header])

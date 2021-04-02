@@ -1,9 +1,8 @@
 (ns bookmarx.header
   (:require [reagent.cookies :as cookies]
             [reagent.session :as session]
-            [taoensso.timbre :as log]
             [bookmarx.client :refer [empty-trash]]
-            [bookmarx.common :refer [path server-path]]))
+            [bookmarx.common :refer [path]]))
 
 (enable-console-print!)
 

@@ -5,7 +5,7 @@
             [cemerick.url :refer [url-decode]]
             [cljs.reader :refer [read-string]]
             [cljs-http.client :as http]
-            [bookmarx.common :refer [settings path server-path get-cookie set-cookie!]])
+            [bookmarx.common :refer [settings server-path get-cookie set-cookie!]])
   (:require-macros
     [bookmarx.env :refer [cljs-env]]
     [cljs.core.async.macros :refer [go]]))
@@ -38,7 +38,7 @@
 (defn update-bookmark "Update a bookmark."
   [doc]
   ;; Update the state in the remote repository.
-  (go (let [body (:body (<! (http/put (server-path"/api/bookmarks/" (:bookmark/id @doc))
+  (go (let [body (:body (<! (http/put (server-path "/api/bookmarks/" (:bookmark/id @doc))
                                       {:edn-params (get-edn-params doc)
                                        :with-credentials? false
                                        :headers {"x-csrf-token" (session/get :csrf-token)}})))]
@@ -60,8 +60,7 @@
 (defn delete-bookmark "Delete the bookmark on the backend service."
   [doc]
   (log/debugf "delete")
-  (go (let [body (:body (<! (http/delete (server-path "/api/bookmarks/"
-                                                      (:bookmark/id @doc))
+  (go (let [body (:body (<! (http/delete (server-path "/api/bookmarks/" (:bookmark/id @doc))
                                          {:edn-params (get-edn-params doc)
                                           :with-credentials? false
                                           :headers {"x-csrf-token" (session/get :csrf-token)}})))]

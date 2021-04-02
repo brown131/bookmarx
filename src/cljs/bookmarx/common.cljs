@@ -1,13 +1,12 @@
 (ns bookmarx.common
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [reagent.core :refer [atom]]
             [reagent.cookies :as cookies]
             [reagent.session :as session]
             [cemerick.url :refer [url url-decode]]
             [cljs.reader :refer [read-string]])
   (:require-macros
-    [bookmarx.env :refer [cljs-env]]
-    [cljs.core.async.macros :refer [go]]))
+    [bookmarx.env :refer [cljs-env]]))
 
 (defonce settings (atom :show-title false :show-url false :show-created false :show-last-visited false
                         :show-visits false :show-rating false :show-new false :show-visited false
@@ -22,7 +21,7 @@
   [kw & default]
   (if-let [val (session/get kw)] val
     (if-let [cookie (cookies/get (name kw))]
-      (let [val (read-string (str/replace (url-decode cookie) #"\+" " "))]
+      (let [val (read-string (s/replace (url-decode cookie) #"\+" " "))]
         (session/put! kw val)
         val)
       (when-not (empty? default) (set-cookie! kw (first default))))))
@@ -36,13 +35,15 @@
 
 (defn path "Create a url with the path from the environment."
   [& args]
-  (str/join (cons (cljs-env :prefix) args)))
+  (let [path (s/join args)]
+    (if (s/starts-with? path (cljs-env :prefix)) 
+      path
+      (str (cljs-env :prefix) path))))
 
 (defn server-path "Create a url to the service with the path from the environment."
   [& args]
   (let [{:keys [:protocol :host :port]} (url (-> js/window .-location .-href))]
-    (str protocol "://" host (if (> port 0) (str ":" port) "")
-         (str/join (cons (cljs-env :prefix) args)))))
+    (str protocol "://" host (if (> port 0) (str ":" port) "") (apply path args))))
 
 (defn sort-folder-children "Sort the children of a folder by a sort function."
   [folder sort-fn]
@@ -54,8 +55,8 @@
   "Parse a date string into a Date.
   Format: \"Apr 30 2005 17:19:43 GMT-0500 (CDT))\""
   [datetime]
-  (let [date-parts (str/split (str datetime) #" ")
-        time-parts (str/split (nth date-parts 4) #":")
+  (let [date-parts (s/split (str datetime) #" ")
+        time-parts (s/split (nth date-parts 4) #":")
         month (some #(when (= (nth date-parts 1) (val %)) (key %))
                     {1 "Jan" 2 "Feb" 3 "Mar" 4 "Apr" 5 "May" 6 "Jun" 7 "Jul" 8 "Aug"
                      9 "Sep" 10 "Oct" 11 "Nov" 12 "Dec"})]

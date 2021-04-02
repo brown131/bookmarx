@@ -2,9 +2,8 @@
   (:require [clojure.set :refer [difference]]
             [clojure.string :as str]
             [taoensso.timbre :as t]
-            [ring.middleware.anti-forgery :refer :all]
+            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
             [ring.util.response :as r]
-            [config.core :refer [env]]
             [bookmarx.auth :as auth]
             [bookmarx.ds :as ds :refer [bookmarks]])
   (:import [java.util Date]))

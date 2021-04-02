@@ -16,4 +16,6 @@ auth_privkey.pem
 .nrepl-port
 .AppleDouble
 .DS_Store
-
+.clj-kondo/cache/
+.clj-kondo/.cache/
+.lsp/sqlite.*.db

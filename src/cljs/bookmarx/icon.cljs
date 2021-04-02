@@ -1,6 +1,5 @@
 (ns bookmarx.icon
    (:require [reagent.session :as session]
-             [taoensso.timbre :as log]
              [bookmarx.common :refer [path]]
              [bookmarx.header :as header]))
 

@@ -1,7 +1,7 @@
 (ns bookmarx.add
   (:require [reagent.core :refer [atom]]
             [reagent.session :as session]
-            [reagent-forms.core :refer [bind-fields init-field value-of]]
+            [reagent-forms.core :refer [bind-fields]]
             [accountant.core :as accountant]
             [taoensso.timbre :as log]
             [cemerick.url :refer [url]]

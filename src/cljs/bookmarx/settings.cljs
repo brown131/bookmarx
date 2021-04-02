@@ -1,7 +1,5 @@
 (ns bookmarx.settings
-  (:require [reagent.core :refer [atom]]
-            [reagent.session :as session]
-            [reagent-forms.core :refer [bind-fields]]
+  (:require [reagent-forms.core :refer [bind-fields]]
             [accountant.core :as accountant]
             [bookmarx.client :refer [update-settings]]
             [bookmarx.common :refer [settings path]]

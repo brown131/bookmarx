@@ -2,8 +2,7 @@
   (:require [reagent.session :as session]
             [goog.window :as gwin]
             [bookmarx.client :refer [visit-bookmark]]
-            [bookmarx.common :refer [ticks-in-hour settings path get-cookie set-cookie! parse-date
-                                     get-route]]
+            [bookmarx.common :refer [ticks-in-hour settings path set-cookie! parse-date get-route]]
             [bookmarx.header :as header])
   (:require-macros
     [bookmarx.env :refer [cljs-env]]))

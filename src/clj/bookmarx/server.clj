@@ -8,14 +8,14 @@
             [ring.middleware.cookies :refer [wrap-cookies]]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
-            [ring.middleware.edn :refer :all]
+            [ring.middleware.edn :refer [wrap-edn-params]]
             [ring.middleware.reload :refer [wrap-reload]]
             [ring.middleware.transit :refer [wrap-transit-response]]
             [prone.middleware :refer [wrap-exceptions]]
-            [bookmarx.auth :refer :all]
+            [bookmarx.auth :refer [wrap-auth-token wrap-authentication]]
             [bookmarx.ds :refer [cache-bookmarks]]
-            [bookmarx.handler :refer :all]
-            [bookmarx.pages :refer :all])
+            [bookmarx.handler :as h]
+            [bookmarx.pages :refer [page-handler]])
   (:gen-class))
 
 (t/refer-timbre)
@@ -23,8 +23,8 @@
 (defroutes public-routes
            ;; Authentication
            (GET "/login" [] page-handler)
-           (GET "/api/csrf-token" [] (set-csrf-token {:status 200}))
-           (POST "/login" {credentials :edn-params} (post-login credentials)))
+           (GET "/api/csrf-token" [] (h/set-csrf-token {:status 200}))
+           (POST "/login" {credentials :edn-params} (h/post-login credentials)))
 
 (defroutes secured-routes
            ;; Views
@@ -38,16 +38,15 @@
            (GET "/settings" [] page-handler)
 
            ;; REST API
-           (GET "/api/bookmarks/since/:rev" [rev] (-> (get-bookmarks-since rev)
-                                                      (set-csrf-token)))
-           (GET "/api/settings" [] (get-settings))
-           (POST "/api/bookmarks" {bookmark :edn-params} (post-bookmark bookmark))
-           (POST "/api/settings" {settings :edn-params} (post-settings settings))
-           (PUT "/api/bookmarks/visit/:id" [id] (put-bookmark-visit id))
-           (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params}
-             (put-bookmark id bookmark))
-           (DELETE "/api/bookmarks/trash" [] (delete-trash))
-           (DELETE "/api/bookmarks/:id" [id] (delete-bookmark id))
+           (GET "/api/bookmarks/since/:rev" [rev] (-> (h/get-bookmarks-since rev)
+                                                      (h/set-csrf-token)))
+           (GET "/api/settings" [] (h/get-settings))
+           (POST "/api/bookmarks" {bookmark :edn-params} (h/post-bookmark bookmark))
+           (POST "/api/settings" {settings :edn-params} (h/post-settings settings))
+           (PUT "/api/bookmarks/visit/:id" [id] (h/put-bookmark-visit id))
+           (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} (h/put-bookmark id bookmark))
+           (DELETE "/api/bookmarks/trash" [] (h/delete-trash))
+           (DELETE "/api/bookmarks/:id" [id] (h/delete-bookmark id))
 
            (resources "/")
            (not-found "Not Found"))
@@ -77,12 +76,12 @@
       (wrap-cors :access-control-allow-origin [#"http[s]*://www.browncross.com" #"http://localhost:\d+"]
                  :access-control-allow-methods [:get :post :put :delete])))
 
- (defn -main [& args]
+ (defn -main [& _]
    (t/set-config! (dissoc (env :log-config) :fname))
    (t/merge-config!
      {:appenders {:spit (t/spit-appender {:fname (:fname (env :log-config))})}})
 
    (cache-bookmarks)
 
-   (let [port (Integer/parseInt (or (env :port) "3000"))]
+   (let [port (Integer/parseInt (or (env :port) "3449"))]
      (run-jetty app {:port port :join? false})))

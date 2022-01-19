@@ -3,7 +3,7 @@
 (use 'figwheel-sidecar.repl-api)
 
 (start-figwheel!
-  {:figwheel-options {:server-port 3449}
+  {:figwheel-options {:server-port 9500}
    :build-ids ["app"]
    :all-builds [{:id "app"
                  :source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]

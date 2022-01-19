@@ -8,6 +8,7 @@
 *.log
 *.pid
 *.iml
+*.rdb
 *#
 .#*
 profiles.clj
@@ -19,3 +20,5 @@ auth_privkey.pem
 .clj-kondo/cache/
 .clj-kondo/.cache/
 .lsp/sqlite.*.db
+
+

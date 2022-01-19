@@ -3,6 +3,7 @@
             [compojure.route :refer [not-found resources]]
             [config.core :refer [env]]
             [taoensso.timbre :as t]
+            [taoensso.timbre.appenders.core :refer [spit-appender]]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [ring.middleware.cookies :refer [wrap-cookies]]
@@ -10,15 +11,13 @@
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [ring.middleware.edn :refer [wrap-edn-params]]
             [ring.middleware.reload :refer [wrap-reload]]
-            [ring.middleware.transit :refer [wrap-transit-response]]
+            [ring.middleware.format :refer [wrap-restful-format]]
             [prone.middleware :refer [wrap-exceptions]]
             [bookmarx.auth :refer [wrap-auth-token wrap-authentication]]
             [bookmarx.ds :refer [cache-bookmarks]]
             [bookmarx.handler :as h]
             [bookmarx.pages :refer [page-handler]])
   (:gen-class))
-
-(t/refer-timbre)
 
 (defroutes public-routes
            ;; Authentication
@@ -72,16 +71,16 @@
       wrap-middleware
       wrap-cookies
       wrap-edn-params
-      wrap-transit-response
+      (wrap-restful-format :formats [:transit-json])
       (wrap-cors :access-control-allow-origin [#"http[s]*://www.browncross.com" #"http://localhost:\d+"]
                  :access-control-allow-methods [:get :post :put :delete])))
 
  (defn -main [& _]
    (t/set-config! (dissoc (env :log-config) :fname))
    (t/merge-config!
-     {:appenders {:spit (t/spit-appender {:fname (:fname (env :log-config))})}})
+     {:appenders {:spit (spit-appender {:fname (:fname (env :log-config))})}})
 
    (cache-bookmarks)
 
-   (let [port (Integer/parseInt (or (env :port) "3449"))]
+   (let [port (Integer/parseInt (str (or (env :port) 3449)))]
      (run-jetty app {:port port :join? false})))

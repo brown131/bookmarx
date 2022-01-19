@@ -1,5 +1,5 @@
 (ns bookmarx.env
-  (:require [config.core :refer [env]]))
+  #?(:clj (:require [config.core :refer [env]])))
 
 (defmacro cljs-env [kw]
   (env kw))

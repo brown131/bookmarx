@@ -1,5 +1,6 @@
 (ns bookmarx.core
   (:require [reagent.core :as reagent]
+            [reagent.dom :as dom]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
@@ -35,7 +36,7 @@
 
 (defn mount-root "Mount the root node of the DOM with the current page."
   []
-  (reagent/render [:div [current-page]] (.getElementById js/document "app")))
+  (dom/render [:div [current-page]] (.getElementById js/document "app")))
 
 (defn init! "Set the state for the application."
   []

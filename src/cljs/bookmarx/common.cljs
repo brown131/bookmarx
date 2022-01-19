@@ -8,9 +8,9 @@
   (:require-macros
     [bookmarx.env :refer [cljs-env]]))
 
-(defonce settings (atom :show-title false :show-url false :show-created false :show-last-visited false
-                        :show-visits false :show-rating false :show-new false :show-visited false
-                        :sort-on :title))
+(defonce settings (atom {:show-title false :show-url false :show-created false :show-last-visited false
+                         :show-visits false :show-rating false :show-new false :show-visited false
+                         :sort-on :title}))
 
 (defonce ticks-in-hour (* 1000 60 60))
 

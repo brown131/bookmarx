@@ -32,8 +32,7 @@
                  [secretary "1.2.3"]
                  [venantius/accountant "0.2.5"]
                  [cljs-http "0.1.46"]
-                 [clj-time "0.15.2"]
-                 [figwheel-sidecar "0.5.20"]]
+                 [clj-time "0.15.2"]]
 
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-asset-minifier "0.4.6"]]
@@ -55,10 +54,6 @@
   :source-paths ["src/clj" "src/cljc"]
   :resource-paths ["resources" "target/cljsbuild"]
 
-;  :minify-assets
-;  {:assets
-;   {"resources/public/css/site.min.css" "resources/public/css/site.css"}}
-
   :cljsbuild
   {:builds {:min
             {:source-paths ["src/cljs" "src/cljc" "env/prod/cljs"]
@@ -76,14 +71,6 @@
                         :optimizations :none
                         :pretty-print true}}}}
 
-  :figwheel
-  {:http-server-root "public"
-   :server-port 3449
-   :nrepl-port 7002
-   :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
-   :css-dirs ["resources/public/css"]
-   :ring-handler bookmarx.handler/app}
-
   :less {:source-paths ["src/less"]
          :target-path "resources/public/css"}
 
@@ -91,19 +78,13 @@
 
                    :dependencies [[ring/ring-mock "0.4.0"]
                                   [ring/ring-devel "1.9.5" :exclusions [ring/ring-codec]]
-                                  [figwheel-sidecar "0.5.20" :exclusions [args4j lcom.cognitect/transit-clj]]
-                                  [org.clojure/tools.nrepl "0.2.13"]
-                                  [com.cemerick/piggieback "0.2.2"]
-                                  [pjstadig/humane-test-output "0.11.0"]]
+                                  [thheller/shadow-cljs "2.17.2"]
+                                  [org.clojure/tools.nrepl "0.2.13"]]
 
                    :jvm-opts ["-Dconfig=env/dev/resources/config.edn"]
                    :source-paths ["env/dev/clj"]
                    :resource-paths ["env/dev/resources"]
-                   :plugins [[lein-figwheel "0.5.17"]
-                             [lein-less "1.7.5"]]
-
-                   :injections [(require 'pjstadig.humane-test-output)
-                                (pjstadig.humane-test-output/activate!)]
+                   :plugins [[lein-less "1.7.5"]]
 
                    :env {:dev true}}
 

@@ -9,8 +9,11 @@
 *.pid
 *.iml
 *.rdb
+*.jar
 *#
 .#*
+*~
+.*~
 profiles.clj
 config.edn
 auth_privkey.pem
@@ -20,5 +23,13 @@ auth_privkey.pem
 .clj-kondo/cache/
 .clj-kondo/.cache/
 .lsp/sqlite.*.db
-
-
+/out
+node_modules/
+public/js
+/checkouts
+/src/gen
+pom.xml
+pom.xml.asc
+.shadow-cljs
+.nrepl-*
+.DS_Store

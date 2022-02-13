@@ -4,7 +4,7 @@
             [taoensso.carmine :as car]))
 
 ;; Setup redis connection.
-(defonce bookmarx-conn {:pool {} :spec {}})
+(defonce bookmarx-conn {:pool {} :spec {:host "redis"}})
 (def db (atom (env :database)))
 (defmacro wcar* [& body] `(car/wcar bookmarx-conn (car/select @db) ~@body))
 

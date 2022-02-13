@@ -1,0 +1,8 @@
+{
+  "name": "bookmarx",
+  "version": "2.3.1",
+  "private": true,
+  "devDependencies": {
+    "shadow-cljs": "2.17.2"
+  }
+}

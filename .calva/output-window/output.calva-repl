@@ -1,11 +1,11 @@
 ; This is the Calva evaluation results output window.
-; TIPS: The keyboard shortcut `ctrl+alt+c o` shows and focuses this window
+; TIPS: The keyboard shortcut `ctrl+alt+o o` shows and focuses this window
 ;   when connected to a REPL session.
 ; Please see https://calva.io/output/ for more info.
 ; Happy coding! ♥️
 
 ; Jacking in...
-; Starting Jack-in Terminal: lein update-in :dependencies conj '[nrepl,"0.8.3"]' -- update-in :dependencies conj '[cider/piggieback,"0.5.2"]' -- update-in :plugins conj '[cider/cider-nrepl,"0.25.8"]' -- update-in '[:repl-options,:nrepl-middleware]' conj '["cider.nrepl/cider-middleware"]' -- update-in '[:repl-options,:nrepl-middleware]' conj '["cider.piggieback/wrap-cljs-repl"]' -- with-profile +dev repl :headless
+; Starting Jack-in Terminal: lein update-in :dependencies conj '[nrepl,"0.9.0"]' -- update-in :dependencies conj '[cider/cider-nrepl,"0.27.4"]' -- update-in :plugins conj '[cider/cider-nrepl,"0.27.4"]' -- update-in '[:repl-options,:nrepl-middleware]' conj '["cider.nrepl/cider-middleware"]' -- with-profile +dev repl :headless
 ; Hooking up nREPL sessions...
 ; Connected session: clj
 ; TIPS: 
@@ -17,15 +17,52 @@
 ;   - Clojure lines in stack traces are peekable and clickable.
 clj꞉bookmarx.repl꞉>  ; Use `alt+enter` to evaluate
 ; Creating cljs repl session...
-; Connecting cljs repl: Leiningen + Figwheel Main...
+; Connecting cljs repl: Leiningen + shadow-cljs...
 ;   The Calva Connection Log might have more connection progress information.
-; There are no figwheel build files (.cljs.edn) in the project directory.
-; Connection to Figwheel Main aborted.
-; Error while connecting cljs REPL: Aborted
+; Execution error (ExceptionInfo) at shadow.cljs.devtools.server.runtime/get-instance! (runtime.clj:11).
+shadow-cljs has not been started yet!
+In embedded mode you need to call (shadow.cljs.devtools.server/start!) to start it.
+If you have a shadow-cljs server or watch running then you are not connected to that process.
+; Error while connecting cljs REPL: TypeError: Cannot read property 'search' of undefined
 ; Jack-in done.
 clj꞉bookmarx.repl꞉> 
-(+ 1 1)
-2
-clj꞉bookmarx.repl꞉>  
+#'bookmarx.handler/get-bookmarks-since
+clj꞉bookmarx.handler꞉> 
+#'bookmarx.handler/get-bookmarks-since
+clj꞉bookmarx.handler꞉> 
+(bookmarx.handler/get-bookmarks-since)
+#'bookmarx.handler/get-settings
+clj꞉bookmarx.handler꞉> 
+(bookmarx.handler/get-bookmarks-since)
 
-; nREPL Connection was closed
+
+#'bookmarx.handler/get-settings
+clj꞉bookmarx.handler꞉> (bookmarx.handler/get-bookmarks-since)
+
+
+#'bookmarx.handler/get-settings
+clj꞉bookmarx.handler꞉> 
+#'bookmarx.handler/get-settings
+clj꞉bookmarx.handler꞉> (+ 1 2)
+
+3
+clj꞉bookmarx.handler꞉> (bookmarx.handler/get-bookmarks-since)
+
+
+; Execution error (ArityException) at bookmarx.handler/eval27307 (form-init8425135233534323572.clj:49).
+; Wrong number of args (0) passed to: bookmarx.handler/eval27262/get-bookmarks-since--27263
+clj꞉bookmarx.handler꞉> 
+; Execution error (ArityException) at bookmarx.handler/eval27309 (form-init8425135233534323572.clj:49).
+; Wrong number of args (0) passed to: bookmarx.handler/eval27262/get-bookmarks-since--27263
+clj꞉bookmarx.handler꞉> 
+; Execution error (ArityException) at bookmarx.handler/eval27311 (form-init8425135233534323572.clj:49).
+; Wrong number of args (0) passed to: bookmarx.handler/eval27262/get-bookmarks-since--27263
+clj꞉bookmarx.handler꞉>   (bookmarx.handler/get-bookmarks-since)
+
+; Execution error (ArityException) at bookmarx.handler/eval27313 (form-init8425135233534323572.clj:60).
+; Wrong number of args (0) passed to: bookmarx.handler/eval27262/get-bookmarks-since--27263
+clj꞉bookmarx.handler꞉> (get-settings)
+
+2022-02-13T21:44:35.835Z 29eb85ed822f INFO [bookmarx.handler:270] - get-settings
+{:status 200, :headers {"content-type" "application/edn"}, :body {:show-visited false, :show-rating true, :show-last-visited false, :show-url false, :show-visits false, :show-title true, :sort-on :title, :show-created false, :show-new true}}
+clj꞉bookmarx.handler꞉> 

@@ -1,0 +1,15 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/cljs"
+  "src/cljc"
+  "test/cljs"
+  "test/cljc"]
+
+ :dependencies
+ [[reagent "1.1.0"]]
+
+ :builds
+ {:app {:target :browser
+        :output-dir "resources/public/js"
+        :asset-path "/js"
+        :modules {:main {:entries [bookmarx.core]}}}}}

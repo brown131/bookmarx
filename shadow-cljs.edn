@@ -12,4 +12,4 @@
  {:app {:target :browser
         :output-dir "resources/public/js"
         :asset-path "/js"
-        :modules {:main {:entries [bookmarx.core]}}}}}
+        :modules {:main {:entries [bookmarx.dev]}}}}}

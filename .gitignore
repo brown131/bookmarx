@@ -33,3 +33,4 @@ pom.xml.asc
 .shadow-cljs
 .nrepl-*
 .DS_Store
+/.m2

@@ -39,6 +39,8 @@ RUN curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/l
 	&& chmod +x lein \
 	&& mv lein /usr/local/bin \
     && lein
+
+# Keep maven dependencies in the workspace.
 RUN ln -s /workspace/.m2 /root/.m2
 
 # Install Node

@@ -1,5 +1,5 @@
 (ns bookmarx.server
-  (:require [compojure.core :refer [GET POST PUT DELETE defroutes]]
+  (:require [compojure.core :refer [context GET POST PUT DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [config.core :refer [env]]
             [taoensso.timbre :as t]
@@ -20,13 +20,14 @@
   (:gen-class))
 
 (defroutes public-routes
-           ;; Authentication
-           (GET "/login" [] page-handler)
-           (GET "/api/csrf-token" [] (h/set-csrf-token {:status 200}))
-           (POST "/login" {credentials :edn-params} (h/post-login credentials)))
+  ;; Authentication
+  (GET "/login" [] page-handler)
+  (GET "/api/csrf-token" [] (h/set-csrf-token {:status 200}))
+  (POST "/login" {credentials :edn-params} (h/post-login credentials)))
 
 (defroutes secured-routes
-           ;; Views
+  ;; Views
+  (context "/" []
            (GET "/" [] page-handler)
            (GET "/add" [] page-handler)
            (GET "/about" [] page-handler)
@@ -34,28 +35,29 @@
            (GET "/icon" [] page-handler)
            (GET "/logout" [] page-handler)
            (GET "/search" [] page-handler)
-           (GET "/settings" [] page-handler)
+           (GET "/settings" [] page-handler))
 
-           ;; REST API
-           (GET "/api/bookmarks/since/:rev" [rev] (-> (h/get-bookmarks-since rev)
-                                                      (h/set-csrf-token)))
-           (GET "/api/settings" [] (h/get-settings))
-           (POST "/api/bookmarks" {bookmark :edn-params} (h/post-bookmark bookmark))
-           (POST "/api/settings" {settings :edn-params} (h/post-settings settings))
-           (PUT "/api/bookmarks/visit/:id" [id] (h/put-bookmark-visit id))
-           (PUT "/api/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} (h/put-bookmark id bookmark))
-           (DELETE "/api/bookmarks/trash" [] (h/delete-trash))
-           (DELETE "/api/bookmarks/:id" [id] (h/delete-bookmark id))
+  ;; REST API
+  (context "/api" []
+           (GET "/bookmarks/since/:rev" [rev] (-> (h/get-bookmarks-since rev)
+                                                  (h/set-csrf-token)))
+           (GET "/settings" [] (h/get-settings))
+           (POST "/bookmarks" {bookmark :edn-params} (h/post-bookmark bookmark))
+           (POST "/settings" {settings :edn-params} (h/post-settings settings))
+           (PUT "/bookmarks/visit/:id" [id] (h/put-bookmark-visit id))
+           (PUT "/bookmarks/:id" {{id :id} :route-params bookmark :edn-params} (h/put-bookmark id bookmark))
+           (DELETE "/bookmarks/trash" [] (h/delete-trash))
+           (DELETE "/bookmarks/:id" [id] (h/delete-bookmark id)))
 
-           (resources "/")
-           (not-found "Not Found"))
+  (resources "/")
+  (not-found "Not Found"))
 
 (defroutes app-routes
-           (-> public-routes
-               wrap-auth-token)
-           (-> secured-routes
-               wrap-authentication
-               wrap-auth-token))
+  (-> public-routes
+      wrap-auth-token)
+  (-> secured-routes
+      wrap-authentication
+      wrap-auth-token))
 
 (defn wrap-middleware [handler]
   (let [wrapper (wrap-defaults handler site-defaults)]
@@ -78,7 +80,7 @@
  (defn -main [& _]
    (t/set-config! (dissoc (env :log-config) :fname))
    (t/merge-config!
-     {:appenders {:spit (spit-appender {:fname (:fname (env :log-config))})}})
+    {:appenders {:spit (spit-appender {:fname (:fname (env :log-config))})}})
 
    (cache-bookmarks)
 

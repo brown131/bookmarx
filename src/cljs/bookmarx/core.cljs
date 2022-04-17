@@ -1,6 +1,5 @@
 (ns bookmarx.core
-  (:require [reagent.core :as reagent]
-            [reagent.dom :as dom]
+  (:require [reagent.dom :as dom]
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]

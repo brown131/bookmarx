@@ -54,7 +54,7 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body {:bookmarks changed-bookmarks :revision latest-revision}})
-      (catch Exception e (t/errorf "Error %s" (.toString e)))))
+      (catch Exception e (t/errorf "Error getting bookmarks revision number" e))))
 
 (defn post-bookmark "Add a bookmark into the database for an HTTP request."
   [{:keys [:bookmark/url :bookmark/parent-id] :as bookmark}]
@@ -91,7 +91,7 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error posting bookmark" e))))
 
 (defn update-bookmark "Update a bookmark."
   [{:keys [:bookmark/id :bookmark/url :bookmark/title :bookmark/parent-id] :as bookmark} orig-bookmark]
@@ -174,7 +174,7 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response changed-ids)})
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error putting bookmark" e))))
 
 (defn put-bookmark-visit "Update visit information of a bookmark in the database for an HTTP request."
   [id]
@@ -194,7 +194,7 @@
       {:status 201
        :headers {"content-type" "application/edn"}
        :body (build-response [bookmark-id])})
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error putting bookmark visit" ))))
 
 (defn delete-bookmark "Delete a bookmark in the database."
   [id]
@@ -234,7 +234,7 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids (into [] deleted-ids))})
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error deleting bookmark" e))))
 
 (defn delete-trash "Delete bookmarks from the trash in the database."
   []
@@ -262,7 +262,7 @@
       {:status 200
        :headers {"content-type" "application/edn"}
        :body (assoc (build-response changed-ids) :deleted-ids deleted-ids)})
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error deleting trash" e))))
 
 (defn get-settings "Get all settings and return them in an HTTP response."
   []
@@ -271,7 +271,7 @@
     {:status 200
      :headers {"content-type" "application/edn"}
      :body (ds/get-settings)}
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error getting settings" e))))
 
 (defn post-settings "Add settings into the database for an HTTP request."
   [settings]
@@ -280,4 +280,4 @@
     (ds/save-settings! settings)
     {:status 201
      :headers {"content-type" "application/edn"}}
-    (catch Exception e (t/errorf "Error %s" (.toString e)))))
+    (catch Exception e (t/errorf "Error posting settings" e))))

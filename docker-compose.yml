@@ -1,0 +1,17 @@
+version: "3.9"
+# Development docker-compose file
+services:
+  web:
+    build: .
+    image: brown131/bookmarx:latest
+    ports:
+      - "3449:3449"
+    volumes:
+      - /Users/scott/Projects/bookmarx/log:/var/log
+    depends_on:
+      - redis
+  redis:
+    image: redis:alpine
+    volumes:
+      - /Users/scott/Projects/bookmarx/log:/var/log
+      - /Users/scott/Projects/bookmarx/data:/data

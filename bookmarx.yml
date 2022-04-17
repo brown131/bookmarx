@@ -1,0 +1,18 @@
+version: "3.9"
+# Production docker-compose file. Place in /usr/share/bookmarx
+services:
+  web:
+    image: brown131/bookmarx:latest
+    ports:
+      - "3449:3449"
+    volumes:
+      - /var/log:/var/log
+    depends_on:
+      - redis
+    restart: always
+  redis:
+    image: redis:alpine
+    volumes:
+      - /var/lib/redis:/data
+      - /var/log:/var/log
+    restart: always

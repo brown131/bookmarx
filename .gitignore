@@ -23,6 +23,9 @@ auth_privkey.pem
 .clj-kondo/cache/
 .clj-kondo/.cache/
 .lsp/sqlite.*.db
+.lsp/.cache
+/.calva
+/.idea
 /out
 node_modules/
 public/js
